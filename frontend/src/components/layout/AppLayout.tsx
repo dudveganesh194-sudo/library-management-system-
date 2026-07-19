@@ -3,15 +3,25 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { Menu, BookOpen } from 'lucide-react';
+import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 
 /**
  * Main app layout — sidebar + top navigation bar + content area.
+ * Supports swipe-right gesture to open sidebar on mobile.
  */
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const swipeHandlers = useSwipeGesture({
+    onSwipeRight: () => setMobileOpen(true),
+    onSwipeLeft: () => setMobileOpen(false),
+  });
+
   return (
-    <div className="flex min-h-screen bg-surface-1 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <div
+      {...swipeHandlers}
+      className="flex min-h-screen bg-surface-1 text-slate-900 dark:text-slate-100 transition-colors duration-200"
+    >
       {/* Sidebar Layout */}
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
@@ -50,3 +60,4 @@ export function AppLayout() {
     </div>
   );
 }
+

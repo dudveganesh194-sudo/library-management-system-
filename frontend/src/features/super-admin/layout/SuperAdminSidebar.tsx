@@ -62,12 +62,12 @@ export function SuperAdminSidebar({ mobileOpen, setMobileOpen }: SuperAdminSideb
       {/* Logo / Brand */}
       <div className={cn('flex items-center justify-between px-4 py-5 border-b border-border', collapsed && 'justify-center px-3')}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20">
-            <ShieldCheck className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20">
+            <ShieldCheck className="w-6 h-6 text-white" />
           </div>
           {!collapsed && (
             <div>
-              <p className="text-sm font-bold text-foreground leading-tight">StudyLib</p>
+              <p className="text-base font-bold text-foreground leading-tight">StudyLib</p>
               <p className="text-2xs text-amber-500 uppercase tracking-widest font-semibold">Super Admin</p>
             </div>
           )}
@@ -75,9 +75,9 @@ export function SuperAdminSidebar({ mobileOpen, setMobileOpen }: SuperAdminSideb
         {showClose && (
           <button
             onClick={() => setMobileOpen(false)}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-zinc-800"
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-zinc-800"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         )}
       </div>
@@ -91,15 +91,15 @@ export function SuperAdminSidebar({ mobileOpen, setMobileOpen }: SuperAdminSideb
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 cursor-pointer hover:bg-slate-100 dark:hover:bg-surface-4 hover:text-foreground',
-                isActive && 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+                'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground transition-all duration-200 cursor-pointer hover:bg-slate-100 dark:hover:bg-surface-4 hover:text-foreground min-h-[44px]',
+                isActive && 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold',
                 collapsed && 'justify-center px-3'
               )
             }
             title={collapsed ? item.label : undefined}
           >
-            <item.icon className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
+            <item.icon className="w-5 h-5 shrink-0" />
+            {!collapsed && <span className="text-sm">{item.label}</span>}
           </NavLink>
         ))}
       </nav>
@@ -107,14 +107,14 @@ export function SuperAdminSidebar({ mobileOpen, setMobileOpen }: SuperAdminSideb
       {/* User + Collapse */}
       <div className="border-t border-border p-3 space-y-2">
         {/* User info */}
-        <div className={cn('flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-default', collapsed && 'justify-center px-0')}>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+        <div className={cn('flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-default', collapsed && 'justify-center px-0')}>
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
             {user ? getInitials(user.name) : '?'}
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
-              <p className="text-xs text-amber-500 font-medium">Super Admin</p>
+              <p className="text-sm font-semibold text-foreground truncate">{user?.name}</p>
+              <p className="text-xs text-amber-500 font-semibold">Super Admin</p>
             </div>
           )}
         </div>
@@ -122,11 +122,11 @@ export function SuperAdminSidebar({ mobileOpen, setMobileOpen }: SuperAdminSideb
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className={cn('flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium w-full text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-all', collapsed && 'justify-center px-3')}
+          className={cn('flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium w-full text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-all min-h-[44px]', collapsed && 'justify-center px-3')}
           title={collapsed ? 'Logout' : undefined}
         >
-          <LogOut className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Logout</span>}
+          <LogOut className="w-5 h-5 shrink-0" />
+          {!collapsed && <span className="text-sm">Logout</span>}
         </button>
 
         {/* Collapse toggle */}
@@ -134,7 +134,7 @@ export function SuperAdminSidebar({ mobileOpen, setMobileOpen }: SuperAdminSideb
           onClick={() => setCollapsed(!collapsed)}
           className={cn('flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium w-full text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-surface-4 transition-all hidden lg:flex', collapsed && 'justify-center px-3')}
         >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <><ChevronLeft className="w-4 h-4" /><span>Collapse</span></>}
+          {collapsed ? <ChevronRight className="w-5 h-5" /> : <><ChevronLeft className="w-5 h-5" /><span className="text-sm">Collapse</span></>}
         </button>
       </div>
     </div>
@@ -153,7 +153,7 @@ export function SuperAdminSidebar({ mobileOpen, setMobileOpen }: SuperAdminSideb
       {/* Mobile Sidebar */}
       <aside
         className={cn(
-          'lg:hidden fixed top-0 left-0 h-full w-64 z-50 border-r border-border transform transition-transform duration-300',
+          'lg:hidden fixed top-0 left-0 h-full w-72 z-50 border-r border-border transform transition-transform duration-300',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
