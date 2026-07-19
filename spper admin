@@ -1,0 +1,121 @@
+# Super Admin Panel — Walkthrough & Documentation
+
+We have implemented a production-ready **Super Admin Panel** for the Study Library ERP. The panel is completely separate from the Library Owner Dashboard and is restricted exclusively to users with `role="super_admin"`.
+
+---
+
+## 🔐 Credentials & Access
+
+### Super Admin Default Login
+- **URL**: `http://localhost:5173/login` (auto-redirects to `/super-admin/dashboard`)
+- **Email**: `superadmin@studylib.com`
+- **Password**: `SuperAdmin@123456`
+
+---
+
+## 🚀 Key Features Implemented
+
+### 1. Dashboard (`/super-admin/dashboard`)
+- **Real-time Platform Metrics**: Total Libraries (Active, Suspended, Soft-deleted), Total Revenue (All-time & Monthly with % growth), Total Students, and Library Owners.
+- **Library Status Breakdown**: Visual cards showing health across active/suspended/deleted libraries.
+- **Live Audit Activity Feed**: Real-time trail showing who performed administrative actions and when.
+
+### 2. Libraries Management (`/super-admin/libraries`)
+- **Full Library Lifecycle**: Create, Edit, Suspend, Activate, Soft-Delete, Search, and Filter by status tabs (`all`, `active`, `suspended`, `deleted`).
+- **Atomic Creation Transaction**: When creating a library, MongoDB atomically executes:
+  1. Creates `Library` document with address, city, state, pinCode, seats limit, and subscription plan.
+  2. Creates `User` account with `role="owner"` and links `owner.libraryId`.
+  3. Creates default `Settings` document.
+  4. Creates default `Floor 1`.
+  5. Returns login credentials in a secure copy-dialog.
+- **Action Modals & Confirmation Dialogs**: Custom confirmation popups before suspending, activating, or deleting libraries.
+
+### 3. Subscriptions Management (`/super-admin/subscriptions`)
+- **Plan Tier Management**: Create, edit, and delete subscription plans (Basic, Pro, Enterprise).
+- **Plan Enforcement**: Prevents deletion of plans that are currently assigned to active libraries.
+- **Pre-seeded Plans**:
+  - **Basic**: ₹999/mo (30 days, 50 seats, 3 staff)
+  - **Pro**: ₹2,499/mo (30 days, 200 seats, 10 staff)
+  - **Enterprise**: ₹4,999/mo (30 days, 1,000 seats, 50 staff)
+
+### 4. Revenue Analytics (`/super-admin/revenue`)
+- Cumulative all-time platform revenue and monthly averages.
+- Monthly revenue breakdown table.
+
+### 5. Platform Settings (`/super-admin/settings`)
+- Global configuration for platform name, support email, and public library registration toggles.
+
+### 6. Audit Logs (`/super-admin/logs`)
+- Searchable and paginated immutable trail of all admin operations, capturing action name, performer, IP address, and timestamp.
+
+### 7. Profile (`/super-admin/profile`)
+- Super admin profile editor and secure password update form.
+
+---
+
+## 🛠️ Tech Stack & Architecture
+
+| Layer | Technology | Usage |
+| font | Inter / JetBrains Mono | Modern SaaS Typography |
+| Frontend | React + Vite + TypeScript | Strict TS types, React Router v7 |
+| UI | Tailwind CSS (v4) + shadcn/ui style | Modern dark/light SaaS theme with Amber/Orange accent |
+| Validation | Zod + React Hook Form | Full client-side & server-side schema validation |
+| State/API | @tanstack/react-query + Axios | Caching, refetching, JWT bearer tokens & auto-refresh |
+| Backend | Node.js + Express.js | Service & Controller layers, Express Async Errors |
+| Database | MongoDB + Mongoose | Schema definitions, Mongo session transactions, compound indexes |
+| Security | JWT + bcrypt | Role middleware (`authorize('super_admin')`), rate limiting |
+
+---
+
+## 📂 File Structure Overview
+
+```
+backend/src/
+├── features/super-admin/
+│   ├── models/
+│   │   ├── library.model.ts         # Library schema
+│   │   ├── subscription.model.ts    # Subscription schema
+│   │   └── audit-log.model.ts       # Audit log schema
+│   ├── library.validation.ts        # Zod validation schemas
+│   ├── subscription.validation.ts   # Zod validation schemas
+│   ├── library.service.ts           # Atomic creation & CRUD business logic
+│   ├── subscription.service.ts      # Subscription business logic
+│   ├── dashboard.service.ts         # Parallel aggregation stats
+│   ├── audit-log.service.ts         # Immutable log recorder
+│   ├── super-admin.controller.ts    # Express controller
+│   └── super-admin.routes.ts        # Authenticated & authorized routes
+├── middleware/
+│   └── validateZod.middleware.ts    # Zod validation middleware
+
+frontend/src/
+├── features/super-admin/
+│   ├── api/
+│   │   └── super-admin.api.ts       # API client layer
+│   ├── layout/
+│   │   ├── SuperAdminLayout.tsx     # Shell layout with topbar & badge
+│   │   └── SuperAdminSidebar.tsx    # Separate Collapsible Sidebar
+│   ├── pages/
+│   │   ├── DashboardPage.tsx
+│   │   ├── LibrariesPage.tsx
+│   │   ├── SubscriptionsPage.tsx
+│   │   ├── RevenuePage.tsx
+│   │   ├── SettingsPage.tsx
+│   │   ├── LogsPage.tsx
+│   │   └── ProfilePage.tsx
+│   └── components/
+│       ├── DataTable.tsx
+│       ├── ConfirmDialog.tsx
+│       ├── StatusBadge.tsx
+│       ├── TableSkeleton.tsx
+│       ├── CreateLibraryModal.tsx
+│       ├── EditLibraryModal.tsx
+│       └── LibraryCredentialsDialog.tsx
+```
+
+---
+
+## ✅ Verification & Build Status
+
+- **Backend Build**: `npm run build` — ✅ PASS (0 errors)
+- **Frontend Build**: `npx tsc -b` & `vite build` — ✅ PASS (0 errors)
+- **Database Seed**: `npm run seed` — ✅ PASS (Super Admin & Plans created)
