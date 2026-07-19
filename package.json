@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "cd backend && npm install --include=dev && npm run build",
-    "start": "cd backend && npm start",
+    "start": "node backend/dist/server.js",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "dev": "start /B npm run dev:backend && npm run dev:frontend",
