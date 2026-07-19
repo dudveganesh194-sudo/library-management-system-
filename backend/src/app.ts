@@ -68,6 +68,21 @@ if (env.isDevelopment) {
   app.use(morgan('combined'));
 }
 
+// ── Root Route ────────────────────────────────────────────────────────────────
+app.get('/', (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: '📚 Library ERP API is running',
+    version: '1.0.0',
+    docs: '/health',
+  });
+});
+
+// Support HEAD / for Render health checks
+app.head('/', (_req, res) => {
+  res.sendStatus(200);
+});
+
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({
