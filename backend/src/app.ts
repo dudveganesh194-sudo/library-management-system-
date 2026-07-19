@@ -29,9 +29,30 @@ const app = express();
 
 // ── Security Middleware ───────────────────────────────────────────────────────
 app.use(helmet());
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, Render health checks)
+      if (!origin) return callback(null, true);
+
+      // Allow any netlify.app subdomain
+      if (origin.endsWith('.netlify.app')) return callback(null, true);
+
+      // Allow any vercel.app subdomain
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
+
+      // Allow explicitly listed origins
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      callback(new Error(`CORS: Origin ${origin} not allowed`));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
