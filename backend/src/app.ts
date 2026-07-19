@@ -93,7 +93,7 @@ if (env.isDevelopment) {
 app.get('/', (_req, res) => {
   res.status(200).json({
     success: true,
-    message: '📚 Library ERP API is running',
+    message: '📚 LibraryInfos API is running',
     version: '1.0.0',
     docs: '/health',
   });

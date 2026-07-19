@@ -10,7 +10,7 @@ import { Input } from '../../../components/ui/Input';
 
 export function SettingsPage() {
   const [platformName, setPlatformName] = useState('Study Library ERP');
-  const [supportEmail, setSupportEmail] = useState('support@studylib.com');
+  const [supportEmail, setSupportEmail] = useState('support@libraryinfos.com');
   const [allowRegistration, setAllowRegistration] = useState(true);
   const [saving, setSaving] = useState(false);
 

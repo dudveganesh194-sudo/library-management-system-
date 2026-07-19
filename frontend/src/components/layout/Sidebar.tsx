@@ -66,7 +66,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
           </div>
           {!collapsed && (
             <div>
-              <p className="text-base font-bold text-foreground leading-tight">StudyLib</p>
+              <p className="text-base font-bold text-foreground leading-tight">LibraryInfos</p>
               <p className="text-2xs text-muted-foreground uppercase tracking-widest">ERP</p>
             </div>
           )}

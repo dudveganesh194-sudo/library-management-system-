@@ -67,7 +67,7 @@ export function SuperAdminSidebar({ mobileOpen, setMobileOpen }: SuperAdminSideb
           </div>
           {!collapsed && (
             <div>
-              <p className="text-base font-bold text-foreground leading-tight">StudyLib</p>
+              <p className="text-base font-bold text-foreground leading-tight">LibraryInfos</p>
               <p className="text-2xs text-amber-500 uppercase tracking-widest font-semibold">Super Admin</p>
             </div>
           )}
