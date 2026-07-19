@@ -5,13 +5,15 @@ interface SwipeConfig {
   onSwipeLeft?: () => void;
   minSwipeDistance?: number;
   maxVerticalDistance?: number;
+  maxStartEdgeX?: number; // Only allow swipe right if touch starts near left edge
 }
 
 export function useSwipeGesture({
   onSwipeRight,
   onSwipeLeft,
-  minSwipeDistance = 50,
-  maxVerticalDistance = 60,
+  minSwipeDistance = 90, // Requires a longer, deliberate slide (90px)
+  maxVerticalDistance = 45, // Strict vertical limit to avoid vertical scrolling triggers
+  maxStartEdgeX = 50, // To open menu, touch must start within 50px of left screen edge
 }: SwipeConfig) {
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
 
@@ -21,10 +23,9 @@ export function useSwipeGesture({
     const target = e.target as HTMLElement | null;
     const clientX = e.touches[0].clientX;
 
-    // If touching inside an interactive form element or modal/dialog,
-    // only register swipe if touch originated right at the screen's left edge (<= 30px)
+    // Do not intercept if user is touching interactive inputs or dialog elements unless near left edge
     if (target && target.closest('input, textarea, select, button, [role="dialog"], .scrollable')) {
-      if (clientX > 30) {
+      if (clientX > maxStartEdgeX) {
         return;
       }
     }
@@ -44,9 +45,11 @@ export function useSwipeGesture({
     const deltaX = touchEndX - touchStart.x;
     const deltaY = touchEndY - touchStart.y;
 
-    // Verify horizontal swipe (vertical movement must be within threshold)
+    // Verify horizontal swipe:
+    // 1. Vertical movement must be small (<= maxVerticalDistance)
+    // 2. To open menu (swipe right), touch start position must be near the left edge (<= maxStartEdgeX)
     if (Math.abs(deltaY) <= maxVerticalDistance) {
-      if (deltaX >= minSwipeDistance) {
+      if (deltaX >= minSwipeDistance && touchStart.x <= maxStartEdgeX) {
         onSwipeRight?.();
       } else if (deltaX <= -minSwipeDistance) {
         onSwipeLeft?.();
