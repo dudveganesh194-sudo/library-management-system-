@@ -45,7 +45,7 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
   const isEdit = !!student;
 
   const [shiftType, setShiftType] = useState<string>(student?.shiftType || 'full_day');
-  const [customHours, setCustomHours] = useState<number>(student?.shiftHours || 6);
+  const [customHours, setCustomHours] = useState<string>(student?.shiftHours ? String(student.shiftHours) : '6');
 
   const {
     register,
@@ -82,7 +82,7 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
       } else if (shiftType === '6_hours') {
         finalHours = 6;
       } else if (shiftType === 'custom') {
-        finalHours = customHours || 6;
+        finalHours = parseInt(customHours, 10) || 6;
       }
 
       if (shiftType !== 'full_day' && formData.startTime && formData.endTime) {
@@ -158,7 +158,7 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
             min={1}
             max={24}
             value={customHours}
-            onChange={(e) => setCustomHours(parseInt(e.target.value, 10) || 6)}
+            onChange={(e) => setCustomHours(e.target.value)}
             placeholder="e.g. 8"
           />
         )}
@@ -178,7 +178,7 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
         <div className="p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Assigned Time Slot Preview:</span>
           <span className="font-bold text-brand-500">
-            {formatTime12h(startTimeVal)} → {formatTime12h(endTimeVal)} ({shiftType === 'custom' ? customHours : shiftType === '12_hours' ? 12 : 6} Hours)
+            {formatTime12h(startTimeVal)} → {formatTime12h(endTimeVal)} ({shiftType === 'custom' ? (customHours || '0') : shiftType === '12_hours' ? 12 : 6} Hours)
           </span>
         </div>
       )}
