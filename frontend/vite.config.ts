@@ -22,28 +22,16 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'ui-radix': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-alert-dialog',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-switch',
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-label',
-            '@radix-ui/react-separator',
-            '@radix-ui/react-slot',
-          ],
-          'charts': ['recharts'],
-          'query': ['@tanstack/react-query'],
-          'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          'utils': ['axios', 'date-fns', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-dom') || id.includes('react/')) return 'react-vendor';
+            if (id.includes('react-router-dom')) return 'router';
+            if (id.includes('@radix-ui')) return 'ui-radix';
+            if (id.includes('recharts')) return 'charts';
+            if (id.includes('@tanstack')) return 'query';
+            if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('zod')) return 'forms';
+            if (id.includes('axios') || id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('class-variance-authority')) return 'utils';
+          }
         },
       },
     },
