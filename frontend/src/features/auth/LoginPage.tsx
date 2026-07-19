@@ -54,61 +54,61 @@ export function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="card p-8 space-y-6">
+        <div className="card p-6 sm:p-8 space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Welcome back</h2>
-            <p className="text-slate-500 text-sm mt-1">Enter your credentials to continue</p>
+            <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">Welcome back</h2>
+            <p className="text-slate-500 text-base mt-1">Enter your credentials to continue</p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             {/* Email */}
             <div className="space-y-1.5">
-              <label htmlFor="email" className="label">Email address</label>
+              <label htmlFor="email" className="label text-base font-semibold">Email address</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
                   id="email"
                   type="email"
                   autoComplete="email"
                   placeholder="you@library.com"
                   {...register('email')}
-                  className={`input pl-9 ${errors.email ? 'input-error' : ''}`}
+                  className={`input pl-11 text-base ${errors.email ? 'input-error' : ''}`}
                 />
               </div>
-              {errors.email && <p className="error-msg"><span>{errors.email.message}</span></p>}
+              {errors.email && <p className="error-msg text-sm"><span>{errors.email.message}</span></p>}
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="password" className="label">Password</label>
+              <label htmlFor="password" className="label text-base font-semibold">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   placeholder="••••••••"
                   {...register('password')}
-                  className={`input pl-9 pr-10 ${errors.password ? 'input-error' : ''}`}
+                  className={`input pl-11 pr-11 text-base ${errors.password ? 'input-error' : ''}`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-slate-300"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {errors.password && <p className="error-msg"><span>{errors.password.message}</span></p>}
+              {errors.password && <p className="error-msg text-sm"><span>{errors.password.message}</span></p>}
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn-primary btn w-full mt-2"
+              className="btn-primary btn btn-lg w-full mt-2 text-base font-semibold"
             >
               {isSubmitting ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
+                <><Loader2 className="w-5 h-5 animate-spin" /> Signing in...</>
               ) : (
                 'Sign in'
               )}
@@ -116,7 +116,7 @@ export function LoginPage() {
           </form>
 
           <div className="pt-2 border-t border-border">
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs sm:text-sm text-muted-foreground text-center">
               Default: <span className="text-foreground font-semibold font-mono">admin@library.com</span> / <span className="text-foreground font-semibold font-mono">Admin@123456</span>
             </p>
           </div>

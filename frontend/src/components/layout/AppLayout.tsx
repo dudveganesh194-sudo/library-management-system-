@@ -23,15 +23,15 @@ export function AppLayout() {
             {/* Mobile Hamburger menu */}
             <button
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-zinc-800"
+              className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-zinc-800 touch-manipulation"
               aria-label="Open menu"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-6 h-6" />
             </button>
-            <div className="lg:hidden w-8 h-8 rounded-lg bg-gradient-brand flex items-center justify-center shrink-0">
-              <BookOpen className="w-4.5 h-4.5 text-white" />
+            <div className="lg:hidden w-9 h-9 rounded-xl bg-gradient-brand flex items-center justify-center shrink-0 shadow-glow-sm">
+              <BookOpen className="w-5 h-5 text-white" />
             </div>
-            <span className="lg:hidden text-sm font-bold text-foreground leading-none">StudyLib</span>
+            <span className="lg:hidden text-base font-bold text-foreground leading-none">StudyLib</span>
           </div>
 
           {/* Theme switcher toggle */}
@@ -42,7 +42,7 @@ export function AppLayout() {
 
         {/* Content Outlet scroll area */}
         <main className="flex-1 overflow-x-hidden">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in">
+          <div className="p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in">
             <Outlet />
           </div>
         </main>
