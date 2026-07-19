@@ -11,14 +11,26 @@ export function useSwipeGesture({
   onSwipeRight,
   onSwipeLeft,
   minSwipeDistance = 50,
-  maxVerticalDistance = 80,
+  maxVerticalDistance = 60,
 }: SwipeConfig) {
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
 
   const handleTouchStart = (e: TouchEvent) => {
     if (e.touches.length !== 1) return;
+
+    const target = e.target as HTMLElement | null;
+    const clientX = e.touches[0].clientX;
+
+    // If touching inside an interactive form element or modal/dialog,
+    // only register swipe if touch originated right at the screen's left edge (<= 30px)
+    if (target && target.closest('input, textarea, select, button, [role="dialog"], .scrollable')) {
+      if (clientX > 30) {
+        return;
+      }
+    }
+
     setTouchStart({
-      x: e.touches[0].clientX,
+      x: clientX,
       y: e.touches[0].clientY,
     });
   };

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -18,38 +19,51 @@ const sizeMap = {
 };
 
 export function Modal({ open, onClose, title, children, className, size = 'md' }: ModalProps) {
+  // Prevent background scrolling when modal is open on mobile
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
 
-      {/* Dialog */}
+      {/* Dialog Window */}
       <div
         className={cn(
-          'relative w-full bg-card border border-border rounded-2xl shadow-card animate-slide-up',
+          'relative w-full max-h-[88dvh] sm:max-h-[90vh] flex flex-col bg-card border border-border rounded-2xl shadow-card animate-slide-up my-auto z-10',
           sizeMap[size],
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
+        {/* Sticky Header */}
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border shrink-0 bg-card rounded-t-2xl">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate pr-2">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-surface-4 transition-colors"
+            className="p-2 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-surface-4 transition-colors shrink-0 touch-manipulation"
+            aria-label="Close modal"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">{children}</div>
+        {/* Scrollable Content Body */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 scrollable space-y-4">{children}</div>
       </div>
     </div>
   );
