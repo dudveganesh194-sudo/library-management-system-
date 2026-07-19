@@ -5,15 +5,15 @@ interface SwipeConfig {
   onSwipeLeft?: () => void;
   minSwipeDistance?: number;
   maxVerticalDistance?: number;
-  maxStartEdgeX?: number; // Only allow swipe right if touch starts near left edge
+  maxStartEdgeX?: number; // Touch start zone from left screen edge
 }
 
 export function useSwipeGesture({
   onSwipeRight,
   onSwipeLeft,
-  minSwipeDistance = 90, // Requires a longer, deliberate slide (90px)
-  maxVerticalDistance = 45, // Strict vertical limit to avoid vertical scrolling triggers
-  maxStartEdgeX = 50, // To open menu, touch must start within 50px of left screen edge
+  minSwipeDistance = 65, // Balanced smooth sensitivity (65px)
+  maxVerticalDistance = 60, // Comfortable vertical margin for natural swipe arcs
+  maxStartEdgeX = 75, // Easy left-edge touch zone (75px)
 }: SwipeConfig) {
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
 
@@ -46,8 +46,8 @@ export function useSwipeGesture({
     const deltaY = touchEndY - touchStart.y;
 
     // Verify horizontal swipe:
-    // 1. Vertical movement must be small (<= maxVerticalDistance)
-    // 2. To open menu (swipe right), touch start position must be near the left edge (<= maxStartEdgeX)
+    // 1. Vertical movement must be within natural arc (<= maxVerticalDistance)
+    // 2. To open menu (swipe right), touch start position must be in left zone (<= maxStartEdgeX)
     if (Math.abs(deltaY) <= maxVerticalDistance) {
       if (deltaX >= minSwipeDistance && touchStart.x <= maxStartEdgeX) {
         onSwipeRight?.();
