@@ -27,6 +27,9 @@ import superAdminRouter from './features/super-admin/super-admin.routes';
 
 const app = express();
 
+// ── Trust Proxy (Required for Render/Cloudflare/Vercel reverse proxies) ─────
+app.set('trust proxy', 1);
+
 // ── Security Middleware ───────────────────────────────────────────────────────
 app.use(helmet());
 
@@ -68,10 +71,12 @@ const limiter = rateLimit({
   message: { success: false, message: 'Too many requests, please try again later' },
 });
 
-// Stricter limiter for auth endpoints
+// Auth endpoints limiter (allows 100 login attempts per 15 mins per IP)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { success: false, message: 'Too many login attempts, please try again later' },
 });
 
