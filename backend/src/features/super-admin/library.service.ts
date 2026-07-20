@@ -448,6 +448,10 @@ export async function suspendLibrary(
   superAdminId: string,
   ipAddress?: string
 ): Promise<ILibrary> {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new NotFoundError('Library');
+  }
+
   const library = await Library.findById(id);
   if (!library) throw new NotFoundError('Library');
 
@@ -466,10 +470,15 @@ export async function suspendLibrary(
 
   // Also deactivate the owner user and library staff to prevent login
   const userFilters: any[] = [];
-  if (library.owner) userFilters.push({ _id: library.owner });
-  userFilters.push({ libraryId: library._id });
-
-  await User.updateMany({ $or: userFilters }, { isActive: false }).catch(() => {});
+  if (library.owner && mongoose.Types.ObjectId.isValid(String(library.owner))) {
+    userFilters.push({ _id: library.owner });
+  }
+  if (library._id) {
+    userFilters.push({ libraryId: library._id });
+  }
+  if (userFilters.length > 0) {
+    await User.updateMany({ $or: userFilters }, { isActive: false }).catch(() => {});
+  }
 
   try {
     await logAction({
@@ -495,6 +504,10 @@ export async function activateLibrary(
   superAdminId: string,
   ipAddress?: string
 ): Promise<ILibrary> {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new NotFoundError('Library');
+  }
+
   const library = await Library.findById(id);
   if (!library) throw new NotFoundError('Library');
 
@@ -513,10 +526,15 @@ export async function activateLibrary(
 
   // Re-activate owner and library staff users
   const userFilters: any[] = [];
-  if (library.owner) userFilters.push({ _id: library.owner });
-  userFilters.push({ libraryId: library._id });
-
-  await User.updateMany({ $or: userFilters }, { isActive: true }).catch(() => {});
+  if (library.owner && mongoose.Types.ObjectId.isValid(String(library.owner))) {
+    userFilters.push({ _id: library.owner });
+  }
+  if (library._id) {
+    userFilters.push({ libraryId: library._id });
+  }
+  if (userFilters.length > 0) {
+    await User.updateMany({ $or: userFilters }, { isActive: true }).catch(() => {});
+  }
 
   try {
     await logAction({
@@ -542,6 +560,10 @@ export async function deleteLibrary(
   superAdminId: string,
   ipAddress?: string
 ): Promise<void> {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new NotFoundError('Library');
+  }
+
   const library = await Library.findById(id);
   if (!library) throw new NotFoundError('Library');
 
@@ -556,10 +578,15 @@ export async function deleteLibrary(
   );
 
   const userFilters: any[] = [];
-  if (library.owner) userFilters.push({ _id: library.owner });
-  userFilters.push({ libraryId: library._id });
-
-  await User.updateMany({ $or: userFilters }, { isActive: false }).catch(() => {});
+  if (library.owner && mongoose.Types.ObjectId.isValid(String(library.owner))) {
+    userFilters.push({ _id: library.owner });
+  }
+  if (library._id) {
+    userFilters.push({ libraryId: library._id });
+  }
+  if (userFilters.length > 0) {
+    await User.updateMany({ $or: userFilters }, { isActive: false }).catch(() => {});
+  }
 
   try {
     await logAction({
