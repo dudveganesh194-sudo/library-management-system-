@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
-import { Menu, BookOpen } from 'lucide-react';
+import { Menu, BookOpen, Download } from 'lucide-react';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 /**
  * Main app layout — sidebar + top navigation bar + content area.
@@ -11,6 +12,7 @@ import { useSwipeGesture } from '../../hooks/useSwipeGesture';
  */
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { installApp, isInstallable } = usePWAInstall();
 
   const swipeHandlers = useSwipeGesture({
     onSwipeRight: () => setMobileOpen(true),
@@ -44,8 +46,18 @@ export function AppLayout() {
             <span className="lg:hidden text-base font-bold text-foreground leading-none">LibraryInfos</span>
           </div>
 
-          {/* Theme switcher toggle */}
-          <div className="flex items-center gap-4">
+          {/* Action buttons: PWA Install + Theme switcher */}
+          <div className="flex items-center gap-3">
+            {isInstallable && (
+              <button
+                onClick={installApp}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-medium text-xs sm:text-sm shadow-md shadow-indigo-500/20 transition-all duration-200"
+                title="Install LibraryInfos App"
+              >
+                <Download className="w-4 h-4 animate-bounce" />
+                <span>Install App</span>
+              </button>
+            )}
             <ThemeToggle />
           </div>
         </header>

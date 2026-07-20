@@ -13,10 +13,12 @@ import {
   ChevronRight,
   BookOpen,
   X,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../../store/auth.context';
 import { cn, getInitials } from '../../lib/utils';
 import { Role } from '../../types';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 import toast from 'react-hot-toast';
 
 interface NavItem {
@@ -45,6 +47,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const { installApp, isInstallable } = usePWAInstall();
 
   const handleLogout = async () => {
     await logout();
@@ -113,6 +116,18 @@ export function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
             </div>
           )}
         </div>
+
+        {/* Install App (PWA) */}
+        {isInstallable && (
+          <button
+            onClick={installApp}
+            className={cn('nav-item w-full text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10 font-medium', collapsed && 'justify-center px-3')}
+            title={collapsed ? 'Install App' : undefined}
+          >
+            <Download className="w-5 h-5 shrink-0 animate-bounce" />
+            {!collapsed && <span className="text-sm">Install App</span>}
+          </button>
+        )}
 
         {/* Logout */}
         <button
