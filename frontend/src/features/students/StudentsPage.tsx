@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Eye, Pencil, Trash2, UserCheck, Clock, AlertTriangle, Filter, PhoneCall, MessageCircle } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, UserCheck, Clock, AlertTriangle, Filter, PhoneCall, MessageCircle, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/axios';
 import { Student } from '../../types';
@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { StudentStatusBadge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { StudentForm } from './StudentForm';
+import { PaymentForm } from '../payments/PaymentForm';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/auth.context';
 
@@ -29,6 +30,7 @@ export function StudentsPage() {
   const [filterExpiry, setFilterExpiry] = useState<'all' | '7days' | 'expired'>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editStudent, setEditStudent] = useState<Student | null>(null);
+  const [paymentStudent, setPaymentStudent] = useState<Student | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -335,6 +337,13 @@ export function StudentsPage() {
                           <button className="btn-ghost btn btn-sm p-2"><Eye className="w-3.5 h-3.5" /></button>
                         </Link>
                         <button
+                          className="btn-ghost btn btn-sm p-2 text-brand-600 dark:text-brand-300 hover:bg-brand-500/10"
+                          title="Record Fee Payment"
+                          onClick={() => setPaymentStudent(student)}
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                           className="btn-ghost btn btn-sm p-2"
                           onClick={() => { setEditStudent(student); setModalOpen(true); }}
                         >
@@ -382,6 +391,23 @@ export function StudentsPage() {
           onCancel={() => setModalOpen(false)}
         />
       </Modal>
+
+      {/* Record Payment Modal */}
+      {paymentStudent && (
+        <Modal open onClose={() => setPaymentStudent(null)} title={`Record Payment — ${paymentStudent.name}`} size="lg">
+          <PaymentForm
+            studentId={paymentStudent._id}
+            onSuccess={() => {
+              setPaymentStudent(null);
+              queryClient.invalidateQueries({ queryKey: ['students'] });
+              queryClient.invalidateQueries({ queryKey: ['payments'] });
+              queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+              queryClient.invalidateQueries({ queryKey: ['revenue-trend'] });
+            }}
+            onCancel={() => setPaymentStudent(null)}
+          />
+        </Modal>
+      )}
 
       {/* Delete Confirm */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Confirm Permanent Deletion" size="md">

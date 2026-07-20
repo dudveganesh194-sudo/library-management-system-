@@ -141,6 +141,7 @@ export async function createStudent(
   if (shouldRecordPayment || (payAmt !== undefined && payAmt > 0)) {
     try {
       const { createPayment } = await import('../payments/payment.service');
+      const targetLibId = libraryId || (student.libraryId ? String(student.libraryId) : undefined);
       await createPayment(
         {
           student: student._id,
@@ -153,10 +154,10 @@ export async function createStudent(
           notes: payNotes || 'Initial student registration fee',
         },
         createdBy,
-        libraryId
+        targetLibId
       );
     } catch (err: any) {
-      console.error('Error creating initial payment receipt for student:', err?.message || err);
+      console.error('Error creating initial payment receipt for student:', err?.stack || err?.message || err);
     }
   }
 

@@ -81,11 +81,20 @@ export async function createPayment(
   collectedBy: string,
   libraryId?: string
 ): Promise<IPayment> {
-  const studentFilter: Record<string, unknown> = { _id: data.student };
+  const rawStudentId = typeof data.student === 'object' && data.student && '_id' in data.student 
+    ? (data.student as any)._id 
+    : data.student;
+
+  const studentFilter: Record<string, unknown> = { _id: rawStudentId };
   if (libraryId) studentFilter.libraryId = libraryId;
 
-  const student = await Student.findOne(studentFilter);
+  let student = await Student.findOne(studentFilter);
+  if (!student && rawStudentId) {
+    student = await Student.findById(rawStudentId);
+  }
   if (!student) throw new NotFoundError('Student');
+
+  const resolvedLibId = libraryId || (student.libraryId ? String(student.libraryId) : undefined);
 
   let startDate = data.startDate ? new Date(data.startDate as any) : new Date();
   
@@ -94,7 +103,7 @@ export async function createPayment(
     status: 'paid',
     endDate: { $gt: new Date() },
   };
-  if (libraryId) paymentFilter.libraryId = libraryId;
+  if (resolvedLibId) paymentFilter.libraryId = resolvedLibId;
 
   const latestPayment = await Payment.findOne(paymentFilter).sort({ endDate: -1 });
 
@@ -104,11 +113,12 @@ export async function createPayment(
 
   const endDate = data.endDate
     ? new Date(data.endDate as any)
-    : computeEndDate(startDate, data.plan || 'monthly');
+    : computeEndDate(startDate, data.plan || student.plan || 'monthly');
 
   const payment = new Payment({
     ...data,
-    ...(libraryId && { libraryId }),
+    student: student._id,
+    ...(resolvedLibId && { libraryId: resolvedLibId as any }),
     startDate,
     endDate,
     collectedBy,
