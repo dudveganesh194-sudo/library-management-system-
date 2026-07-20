@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CreditCard, Receipt, Sparkles } from 'lucide-react';
 import { api } from '../../lib/axios';
 import { Student } from '../../types';
 import { Input, Select, Textarea } from '../../components/ui/Input';
@@ -34,6 +35,14 @@ function calculateEndTime(startTime: string, durationHours: number): string {
   return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
 }
 
+const PLAN_DEFAULT_PRICES: Record<string, number> = {
+  monthly: 500,
+  quarterly: 1400,
+  'half-yearly': 2700,
+  yearly: 5000,
+  custom: 500,
+};
+
 const studentSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
@@ -58,9 +67,19 @@ interface StudentFormProps {
 
 export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) {
   const isEdit = !!student;
+  const queryClient = useQueryClient();
 
   const [shiftType, setShiftType] = useState<string>(student?.shiftType || 'full_day');
   const [customHours, setCustomHours] = useState<string>(student?.shiftHours ? String(student.shiftHours) : '6');
+
+  // Payment section state for NEW student entry
+  const [recordPayment, setRecordPayment] = useState<boolean>(true);
+  const [paymentAmount, setPaymentAmount] = useState<string>('500');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'upi' | 'card'>('cash');
+  const [paymentStartDate, setPaymentStartDate] = useState<string>(
+    student?.joinDate ? student.joinDate.split('T')[0] : new Date().toISOString().split('T')[0]
+  );
+  const [paymentNotes, setPaymentNotes] = useState<string>('Initial registration & membership fee');
 
   const {
     register,
@@ -87,6 +106,22 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
 
   const startTimeVal = watch('startTime') || '07:00';
   const endTimeVal = watch('endTime') || '13:00';
+  const selectedPlan = watch('plan');
+  const joinDateVal = watch('joinDate');
+
+  // Auto-sync default payment amount when plan changes
+  useEffect(() => {
+    if (!isEdit && selectedPlan && PLAN_DEFAULT_PRICES[selectedPlan]) {
+      setPaymentAmount(String(PLAN_DEFAULT_PRICES[selectedPlan]));
+    }
+  }, [selectedPlan, isEdit]);
+
+  // Auto-sync payment start date when joinDate changes
+  useEffect(() => {
+    if (joinDateVal) {
+      setPaymentStartDate(joinDateVal);
+    }
+  }, [joinDateVal]);
 
   // Automatically calculate end time when startTime, shiftType, or customHours change
   useEffect(() => {
@@ -132,6 +167,13 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
         shiftType,
         shiftHours: finalHours,
         timeSlot: slotText,
+        ...(!isEdit && {
+          recordInitialPayment: recordPayment,
+          paymentAmount: recordPayment ? Number(paymentAmount || 0) : undefined,
+          paymentMethod: recordPayment ? paymentMethod : undefined,
+          paymentStartDate: recordPayment ? paymentStartDate || formData.joinDate : undefined,
+          paymentNotes: recordPayment ? paymentNotes : undefined,
+        }),
       };
 
       if (isEdit) {
@@ -143,7 +185,18 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
       }
     },
     onSuccess: () => {
-      toast.success(isEdit ? 'Student updated!' : 'Student added!');
+      if (isEdit) {
+        toast.success('Student updated!');
+      } else if (recordPayment) {
+        toast.success('Student registered & fee payment updated!');
+      } else {
+        toast.success('Student added successfully!');
+      }
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['revenue-trend'] });
+      queryClient.invalidateQueries({ queryKey: ['expiring-plans-students-page'] });
       onSuccess();
     },
     onError: (err: unknown) => {
@@ -165,11 +218,11 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
           required
           error={errors.plan?.message}
           options={[
-            { label: 'Monthly', value: 'monthly' },
-            { label: 'Quarterly', value: 'quarterly' },
-            { label: 'Half-Yearly', value: 'half-yearly' },
-            { label: 'Yearly', value: 'yearly' },
-            { label: 'Custom', value: 'custom' },
+            { label: 'Monthly (₹500)', value: 'monthly' },
+            { label: 'Quarterly (₹1,400)', value: 'quarterly' },
+            { label: 'Half-Yearly (₹2,700)', value: 'half-yearly' },
+            { label: 'Yearly (₹5,000)', value: 'yearly' },
+            { label: 'Custom Plan', value: 'custom' },
           ]}
           {...register('plan')}
         />
@@ -231,12 +284,78 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
         </div>
       )}
 
+      {/* Initial Fee Payment Receipt Section (When Adding New Student) */}
+      {!isEdit && (
+        <div className="rounded-xl border border-brand-500/30 bg-brand-500/5 p-4 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-brand-500" />
+              <h3 className="text-sm font-bold text-foreground">Record Initial Fee Payment</h3>
+              <span className="text-2xs bg-brand-500/20 text-brand-600 dark:text-brand-300 font-bold px-2 py-0.5 rounded-full">
+                Auto-Updates Payments Page
+              </span>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-brand-600 dark:text-brand-300">
+              <input
+                type="checkbox"
+                checked={recordPayment}
+                onChange={(e) => setRecordPayment(e.target.checked)}
+                className="rounded border-border text-brand-500 focus:ring-brand-500 w-4 h-4"
+              />
+              Generate Fee Receipt Now
+            </label>
+          </div>
+
+          {recordPayment && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <Input
+                label="Amount Paid (₹)"
+                type="number"
+                min={0}
+                required
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                placeholder="500"
+                hint="Auto-suggested based on plan selected"
+              />
+
+              <Select
+                label="Payment Method"
+                required
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as any)}
+                options={[
+                  { label: 'Cash', value: 'cash' },
+                  { label: 'UPI / QR', value: 'upi' },
+                  { label: 'Card / NetBanking', value: 'card' },
+                ]}
+              />
+
+              <Input
+                label="Payment Start Date"
+                type="date"
+                required
+                value={paymentStartDate}
+                onChange={(e) => setPaymentStartDate(e.target.value)}
+              />
+
+              <Input
+                label="Payment Notes / Remarks"
+                placeholder="e.g. Admission fee & 1st month plan"
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       <Textarea label="Notes" placeholder="Any additional information..." {...register('notes')} />
 
       <div className="flex justify-end gap-3 pt-2 border-t border-border">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="submit" loading={mutation.isPending}>
-          {isEdit ? 'Update Student' : 'Add Student'}
+          {isEdit ? 'Update Student' : 'Add Student & Record Payment'}
         </Button>
       </div>
     </form>

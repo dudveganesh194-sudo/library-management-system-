@@ -20,6 +20,11 @@ export const createStudentSchema = Joi.object({
   timeSlot: Joi.string().allow('', null),
   seatId: Joi.string().hex().length(24).allow('', null),
   notes: Joi.string().trim().allow('', null),
+  recordInitialPayment: Joi.boolean().allow(null),
+  paymentAmount: Joi.number().min(0).allow(null, ''),
+  paymentMethod: Joi.string().valid('cash', 'upi', 'card').allow('', null),
+  paymentStartDate: Joi.date().allow('', null),
+  paymentNotes: Joi.string().trim().allow('', null),
 });
 
 export const updateStudentSchema = Joi.object({

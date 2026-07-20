@@ -70,19 +70,40 @@ export async function getStudentById(id: string, libraryId?: string): Promise<IS
 }
 
 export async function createStudent(
-  data: Partial<IStudent>,
+  data: Partial<IStudent> & {
+    recordInitialPayment?: boolean;
+    paymentAmount?: number | string;
+    paymentMethod?: string;
+    paymentStartDate?: string;
+    paymentNotes?: string;
+  },
   createdBy: string,
   libraryId?: string,
   files?: { photo?: Express.Multer.File[]; idProof?: Express.Multer.File[] }
 ): Promise<IStudent> {
   const studentId = await getNextStudentId(libraryId);
 
-  const studentData: Partial<IStudent> = {
+  const studentData: Record<string, any> = {
     ...data,
     studentId,
     createdBy: createdBy as any,
     ...(libraryId && { libraryId: libraryId as any }),
   };
+
+  // Extract payment fields before saving student
+  const shouldRecordPayment = data.recordInitialPayment;
+  const payAmt = data.paymentAmount !== undefined && data.paymentAmount !== null && data.paymentAmount !== ''
+    ? Number(data.paymentAmount)
+    : undefined;
+  const payMethod = data.paymentMethod || 'cash';
+  const payStartDate = data.paymentStartDate;
+  const payNotes = data.paymentNotes;
+
+  delete studentData.recordInitialPayment;
+  delete studentData.paymentAmount;
+  delete studentData.paymentMethod;
+  delete studentData.paymentStartDate;
+  delete studentData.paymentNotes;
 
   // Handle uploaded files
   if (files?.photo?.[0]) {
@@ -114,6 +135,29 @@ export async function createStudent(
       status: SEAT_STATUS.OCCUPIED,
       currentStudent: student._id,
     });
+  }
+
+  // Automatically record initial fee payment receipt if requested/provided
+  if (shouldRecordPayment || (payAmt !== undefined && payAmt > 0)) {
+    try {
+      const { createPayment } = await import('../payments/payment.service');
+      await createPayment(
+        {
+          student: student._id,
+          seat: student.seatId || undefined,
+          amount: payAmt !== undefined ? payAmt : 500,
+          method: payMethod as any,
+          type: 'new',
+          plan: student.plan || 'monthly',
+          startDate: payStartDate ? new Date(payStartDate) : new Date(student.joinDate || Date.now()),
+          notes: payNotes || 'Initial student registration fee',
+        },
+        createdBy,
+        libraryId
+      );
+    } catch (err) {
+      console.error('Error creating initial payment receipt for student:', err);
+    }
   }
 
   return student;
