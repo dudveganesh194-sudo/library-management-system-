@@ -34,6 +34,22 @@ export function PaymentForm({ studentId: initialStudentId, onSuccess, onCancel }
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
+  // Auto-fetch the pre-selected student when studentId prop is passed
+  const { data: preloadedStudent } = useQuery<Student>({
+    queryKey: ['student-preload', initialStudentId],
+    queryFn: async () => {
+      const { data } = await api.get(`/students/${initialStudentId}`);
+      return data;
+    },
+    enabled: !!initialStudentId && !selectedStudent,
+  });
+
+  useEffect(() => {
+    if (preloadedStudent && !selectedStudent) {
+      setSelectedStudent(preloadedStudent);
+    }
+  }, [preloadedStudent, selectedStudent]);
+
   const { data: students } = useQuery<Student[]>({
     queryKey: ['students-search-pay', search],
     queryFn: async () => {
@@ -57,7 +73,11 @@ export function PaymentForm({ studentId: initialStudentId, onSuccess, onCancel }
   }, [initialStudentId, setValue]);
 
   useEffect(() => {
-    if (selectedStudent) setValue('studentId', selectedStudent._id);
+    if (selectedStudent) {
+      setValue('studentId', selectedStudent._id);
+      // Auto-fill plan from student's current plan
+      if (selectedStudent.plan) setValue('plan', selectedStudent.plan);
+    }
   }, [selectedStudent, setValue]);
 
   const mutation = useMutation({

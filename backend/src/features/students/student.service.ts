@@ -138,11 +138,12 @@ export async function createStudent(
   }
 
   // Automatically record initial fee payment receipt if requested/provided
+  console.log('[createStudent] Payment flags:', { shouldRecordPayment, payAmt, payMethod, payStartDate });
   if (shouldRecordPayment || (payAmt !== undefined && payAmt > 0)) {
     try {
       const { createPayment } = await import('../payments/payment.service');
       const targetLibId = libraryId || (student.libraryId ? String(student.libraryId) : undefined);
-      await createPayment(
+      const savedPayment = await createPayment(
         {
           student: student._id,
           seat: student.seatId || undefined,
@@ -150,15 +151,19 @@ export async function createStudent(
           method: (payMethod as any) || 'cash',
           type: 'new',
           plan: student.plan || 'monthly',
+          status: 'paid' as any,
           startDate: payStartDate ? new Date(payStartDate) : new Date(student.joinDate || Date.now()),
           notes: payNotes || 'Initial student registration fee',
         },
         createdBy,
         targetLibId
       );
+      console.log('[createStudent] Payment saved:', savedPayment?.receiptNumber || savedPayment?._id);
     } catch (err: any) {
       console.error('Error creating initial payment receipt for student:', err?.stack || err?.message || err);
     }
+  } else {
+    console.log('[createStudent] Skipping payment creation (not requested or zero amount)');
   }
 
   return student;
