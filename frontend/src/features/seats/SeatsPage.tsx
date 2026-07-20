@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ChevronDown, FileSpreadsheet, Layers3, Plus, UserCheck, UserX, Wrench, Settings2, Trash2 } from 'lucide-react';
+import { ChevronDown, FileSpreadsheet, Layers3, Plus, UserCheck, UserX, Wrench, Settings2, Trash2, Bookmark, BookmarkCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { api } from '../../lib/axios';
 import { Seat, Student } from '../../types';
 import { formatCurrency, formatStudentId } from '../../lib/utils';
@@ -71,6 +72,26 @@ export function SeatsPage() {
     available: seats?.filter((s) => s.status === 'available').length || 0,
     occupied: seats?.filter((s) => s.status === 'occupied').length || 0,
   };
+
+  const toggleReserveMutation = useMutation({
+    mutationFn: async (seat: Seat) => {
+      const newStatus = seat.status === 'reserved' ? 'available' : 'reserved';
+      const { data } = await api.put(`/seats/${seat._id}`, { status: newStatus });
+      return data.data;
+    },
+    onSuccess: (updatedSeat) => {
+      toast.success(
+        updatedSeat.status === 'reserved'
+          ? `Seat ${updatedSeat.seatNumber} is now RESERVED (ON)`
+          : `Seat ${updatedSeat.seatNumber} reservation turned OFF (Available)`
+      );
+      queryClient.invalidateQueries({ queryKey: ['seats'] });
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'Failed to update seat reservation status';
+      toast.error(msg);
+    },
+  });
 
   const handleSeatClick = (seat: Seat) => {
     setStatusSeat(seat);
@@ -264,6 +285,27 @@ export function SeatsPage() {
                     {canManage && (
                       <td>
                         <div className="flex justify-end gap-1">
+                          {seat.status === 'available' && (
+                            <button
+                              className="btn-ghost btn btn-sm gap-1 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                              onClick={() => toggleReserveMutation.mutate(seat)}
+                              title="Turn Reserve ON"
+                              disabled={toggleReserveMutation.isPending}
+                            >
+                              <Bookmark className="w-3.5 h-3.5 text-amber-500" /> Reserve ON
+                            </button>
+                          )}
+                          {seat.status === 'reserved' && (
+                            <button
+                              className="btn-ghost btn btn-sm gap-1 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 font-semibold"
+                              onClick={() => toggleReserveMutation.mutate(seat)}
+                              title="Turn Reserve OFF (Make Available)"
+                              disabled={toggleReserveMutation.isPending}
+                            >
+                              <BookmarkCheck className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> Reserve OFF
+                            </button>
+                          )}
+
                           <button
                             className="btn-ghost btn btn-sm gap-1 text-muted-foreground hover:text-foreground"
                             onClick={() => setStatusSeat(seat)}
@@ -272,7 +314,7 @@ export function SeatsPage() {
                             <Wrench className="w-3.5 h-3.5 text-amber-500" /> Situation
                           </button>
 
-                          {seat.status === 'available' && (
+                          {(seat.status === 'available' || seat.status === 'reserved') && (
                             <button className="btn-ghost btn btn-sm gap-1.5 text-success" onClick={() => setAssignSeat(seat)}>
                               <UserCheck className="w-3.5 h-3.5" /> Assign
                             </button>

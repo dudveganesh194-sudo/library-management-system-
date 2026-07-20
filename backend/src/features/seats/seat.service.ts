@@ -218,11 +218,11 @@ export async function assignSeat(seatId: string, studentId: string, libraryId?: 
   if (!seat) throw new NotFoundError('Seat');
   if (!student) throw new NotFoundError('Student');
 
-  if (seat.status !== SEAT_STATUS.AVAILABLE) {
+  if (seat.status !== SEAT_STATUS.AVAILABLE && seat.status !== SEAT_STATUS.RESERVED) {
     throw new ConflictError(
       seat.status === SEAT_STATUS.OCCUPIED
         ? 'Seat is already occupied'
-        : `Seat is not available for assignment (${seat.status})`
+        : `Seat is under maintenance`
     );
   }
 

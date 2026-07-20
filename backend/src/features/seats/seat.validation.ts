@@ -7,6 +7,7 @@ export const createSeatSchema = Joi.object({
   section: Joi.string().trim().uppercase().required(),
   type: Joi.string().valid(...Object.values(SEAT_TYPE)).default('standard'),
   price: Joi.number().min(0).required(),
+  status: Joi.string().valid(...Object.values(SEAT_STATUS)).default('available'),
   reservedSeatCharge: Joi.number().min(0).allow(null),
   amenities: Joi.array().items(Joi.string()).default([]),
   notes: Joi.string().trim().allow('', null),

@@ -12,6 +12,7 @@ const seatSchema = z.object({
   floor: z.coerce.number().int().min(0, 'Floor must be 0 or greater'),
   section: z.string().min(1, 'Section required').toUpperCase(),
   type: z.enum(['standard', 'premium']),
+  status: z.enum(['available', 'reserved', 'maintenance']),
   price: z.coerce.number().min(0, 'Price must be positive'),
 });
 
@@ -25,7 +26,7 @@ interface SeatFormProps {
 export function SeatForm({ onSuccess, onCancel }: SeatFormProps) {
   const { register, handleSubmit, formState: { errors } } = useForm<any>({
     resolver: zodResolver(seatSchema),
-    defaultValues: { type: 'standard', floor: 1, section: 'A', price: 500 },
+    defaultValues: { type: 'standard', floor: 1, section: 'A', status: 'available', price: 500 },
   });
 
   const mutation = useMutation({
@@ -44,6 +45,7 @@ export function SeatForm({ onSuccess, onCancel }: SeatFormProps) {
         <Input label="Floor" required type="number" min={0} error={errors.floor?.message as any} {...register('floor')} />
         <Input label="Section" required placeholder="A" error={errors.section?.message as any} {...register('section')} />
         <Select label="Type" required options={[{ label: 'Standard', value: 'standard' }, { label: 'Premium', value: 'premium' }]} error={errors.type?.message as any} {...register('type')} />
+        <Select label="Initial Status" options={[{ label: 'Available (Reserve OFF)', value: 'available' }, { label: 'Reserved (Reserve ON)', value: 'reserved' }, { label: 'Maintenance', value: 'maintenance' }]} error={errors.status?.message as any} {...register('status')} />
         <Input label="Monthly Price (₹)" required type="number" min={0} error={errors.price?.message as any} {...register('price')} />
       </div>
       <div className="flex justify-end gap-3 pt-2 border-t border-border">

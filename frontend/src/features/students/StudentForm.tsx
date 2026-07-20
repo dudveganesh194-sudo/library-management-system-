@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,6 +17,21 @@ function formatTime12h(time24: string): string {
   const ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
   return `${h}:${mStr || '00'} ${ampm}`;
+}
+
+function calculateEndTime(startTime: string, durationHours: number): string {
+  if (!startTime) return '';
+  const [hStr, mStr] = startTime.split(':');
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isNaN(h) || isNaN(m)) return '';
+
+  const totalMinutes = Math.round(h * 60 + m + durationHours * 60);
+  const positiveMinutes = ((totalMinutes % (24 * 60)) + 24 * 60) % (24 * 60);
+  const endH = Math.floor(positiveMinutes / 60);
+  const endM = positiveMinutes % 60;
+
+  return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
 }
 
 const studentSchema = z.object({
@@ -51,6 +66,7 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema) as any,
@@ -69,8 +85,28 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
     },
   });
 
-  const startTimeVal = watch('startTime');
-  const endTimeVal = watch('endTime');
+  const startTimeVal = watch('startTime') || '07:00';
+  const endTimeVal = watch('endTime') || '13:00';
+
+  // Automatically calculate end time when startTime, shiftType, or customHours change
+  useEffect(() => {
+    if (shiftType === 'full_day') return;
+    let hours = 6;
+    if (shiftType === '12_hours') {
+      hours = 12;
+    } else if (shiftType === '6_hours') {
+      hours = 6;
+    } else if (shiftType === 'custom') {
+      hours = parseFloat(customHours) || 8;
+    }
+
+    if (startTimeVal) {
+      const calculatedEnd = calculateEndTime(startTimeVal, hours);
+      if (calculatedEnd) {
+        setValue('endTime', calculatedEnd, { shouldValidate: true, shouldDirty: true });
+      }
+    }
+  }, [startTimeVal, shiftType, customHours, setValue]);
 
   const mutation = useMutation({
     mutationFn: async (formData: StudentFormData) => {
@@ -165,8 +201,20 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
 
         {shiftType !== 'full_day' && (
           <>
-            <Input label="Shift Start Time" type="time" error={errors.startTime?.message} {...register('startTime')} />
-            <Input label="Shift End Time" type="time" error={errors.endTime?.message} {...register('endTime')} />
+            <Input
+              label="Shift Start Time"
+              type="time"
+              value={startTimeVal}
+              error={errors.startTime?.message}
+              onChange={(e) => setValue('startTime', e.target.value, { shouldValidate: true, shouldDirty: true })}
+            />
+            <Input
+              label="Shift End Time"
+              type="time"
+              value={endTimeVal}
+              error={errors.endTime?.message}
+              onChange={(e) => setValue('endTime', e.target.value, { shouldValidate: true, shouldDirty: true })}
+            />
           </>
         )}
 

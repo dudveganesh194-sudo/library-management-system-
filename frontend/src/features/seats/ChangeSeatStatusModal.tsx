@@ -44,9 +44,14 @@ export function ChangeSeatStatusModal({
     },
   });
 
-  const handleStatusChange = (newStatus: string) => {
-    if (newStatus === seat.status) return;
-    mutation.mutate(newStatus);
+  const handleStatusChange = (targetStatus: string) => {
+    let nextStatus = targetStatus;
+    if (targetStatus === 'reserved' && seat.status === 'reserved') {
+      nextStatus = 'available';
+    } else if (targetStatus === seat.status) {
+      return;
+    }
+    mutation.mutate(nextStatus);
   };
 
   return (
@@ -101,19 +106,24 @@ export function ChangeSeatStatusModal({
               <span className="text-xs font-medium">Maintenance</span>
             </button>
 
-            {/* Mark Reserved */}
+            {/* Mark / Toggle Reserved */}
             <button
               type="button"
-              disabled={seat.status === 'reserved' || mutation.isPending}
+              disabled={seat.status === 'occupied' || mutation.isPending}
               onClick={() => handleStatusChange('reserved')}
-              className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all text-center ${
+              className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all text-center ${
                 seat.status === 'reserved'
-                  ? 'border-amber-500 bg-amber-500/10 text-amber-500 cursor-default font-semibold'
+                  ? 'border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold shadow-sm hover:bg-amber-500/30'
                   : 'border-border hover:border-amber-500/50 hover:bg-amber-500/5 text-foreground'
               }`}
             >
-              <Bookmark className="w-5 h-5 text-amber-500" />
-              <span className="text-xs font-medium">Reserved</span>
+              <Bookmark className={`w-5 h-5 ${seat.status === 'reserved' ? 'fill-amber-500 text-amber-500' : 'text-amber-500'}`} />
+              <span className="text-xs font-semibold">
+                {seat.status === 'reserved' ? 'Reserved (ON)' : 'Reserve Seat'}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {seat.status === 'reserved' ? 'Click to turn OFF' : 'Click to turn ON'}
+              </span>
             </button>
           </div>
         </div>
