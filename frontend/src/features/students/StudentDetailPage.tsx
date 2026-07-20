@@ -243,7 +243,12 @@ export function StudentDetailPage() {
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit Student" size="lg">
         <StudentForm
           student={student}
-          onSuccess={() => { setEditOpen(false); queryClient.invalidateQueries({ queryKey: ['student', id] }); }}
+          onSuccess={() => {
+            setEditOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['student', id] });
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['payments'] });
+          }}
           onCancel={() => setEditOpen(false)}
         />
       </Modal>
@@ -251,7 +256,13 @@ export function StudentDetailPage() {
       <Modal open={paymentOpen} onClose={() => setPaymentOpen(false)} title="Record Payment" size="lg">
         <PaymentForm
           studentId={student._id}
-          onSuccess={() => { setPaymentOpen(false); queryClient.invalidateQueries({ queryKey: ['student-payments', id] }); }}
+          onSuccess={() => {
+            setPaymentOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['student-payments', id] });
+            queryClient.invalidateQueries({ queryKey: ['payments'] });
+            queryClient.invalidateQueries({ queryKey: ['student', id] });
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+          }}
           onCancel={() => setPaymentOpen(false)}
         />
       </Modal>

@@ -376,6 +376,8 @@ export function StudentsPage() {
           onSuccess={() => {
             setModalOpen(false);
             queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['payments'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
           }}
           onCancel={() => setModalOpen(false)}
         />

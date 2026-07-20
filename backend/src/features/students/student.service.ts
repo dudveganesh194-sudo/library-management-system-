@@ -91,7 +91,7 @@ export async function createStudent(
   };
 
   // Extract payment fields before saving student
-  const shouldRecordPayment = data.recordInitialPayment;
+  const shouldRecordPayment = data.recordInitialPayment === true || String(data.recordInitialPayment) === 'true';
   const payAmt = data.paymentAmount !== undefined && data.paymentAmount !== null && data.paymentAmount !== ''
     ? Number(data.paymentAmount)
     : undefined;
@@ -146,7 +146,7 @@ export async function createStudent(
           student: student._id,
           seat: student.seatId || undefined,
           amount: payAmt !== undefined ? payAmt : 500,
-          method: payMethod as any,
+          method: (payMethod as any) || 'cash',
           type: 'new',
           plan: student.plan || 'monthly',
           startDate: payStartDate ? new Date(payStartDate) : new Date(student.joinDate || Date.now()),
@@ -155,8 +155,8 @@ export async function createStudent(
         createdBy,
         libraryId
       );
-    } catch (err) {
-      console.error('Error creating initial payment receipt for student:', err);
+    } catch (err: any) {
+      console.error('Error creating initial payment receipt for student:', err?.message || err);
     }
   }
 

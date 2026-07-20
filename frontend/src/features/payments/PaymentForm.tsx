@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/axios';
 import { Student } from '../../types';
 import { Input, Select, Textarea } from '../../components/ui/Input';
@@ -30,6 +30,7 @@ type PaymentFormData = z.infer<typeof paymentSchema>;
 interface PaymentFormProps { studentId?: string; onSuccess: () => void; onCancel: () => void; }
 
 export function PaymentForm({ studentId: initialStudentId, onSuccess, onCancel }: PaymentFormProps) {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
@@ -64,7 +65,16 @@ export function PaymentForm({ studentId: initialStudentId, onSuccess, onCancel }
       const { studentId, ...rest } = data;
       return api.post('/payments', { ...rest, student: studentId });
     },
-    onSuccess: () => { toast.success('Payment recorded!'); onSuccess(); },
+    onSuccess: () => {
+      toast.success('Payment recorded successfully!');
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['student-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['revenue-trend'] });
+      queryClient.invalidateQueries({ queryKey: ['expiring-plans-students-page'] });
+      onSuccess();
+    },
     onError: (err: unknown) => {
       toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed');
     },
