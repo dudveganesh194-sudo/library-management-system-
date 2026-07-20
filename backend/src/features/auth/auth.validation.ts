@@ -5,15 +5,14 @@
 import Joi from 'joi';
 
 export const loginSchema = Joi.object({
-  email: Joi.string().email().lowercase().trim().required().messages({
-    'string.email': 'Please provide a valid email address',
-    'any.required': 'Email is required',
-  }),
+  email: Joi.string().trim().allow('', null),
+  username: Joi.string().trim().allow('', null),
+  identifier: Joi.string().trim().allow('', null),
   password: Joi.string().min(8).required().messages({
     'string.min': 'Password must be at least 8 characters',
     'any.required': 'Password is required',
   }),
-});
+}).or('email', 'username', 'identifier');
 
 export const changePasswordSchema = Joi.object({
   currentPassword: Joi.string().required(),

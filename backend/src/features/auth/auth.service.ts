@@ -17,19 +17,29 @@ import { AuthUser } from '../../shared/types';
 import { logger } from '../../shared/helpers/logger';
 
 export async function loginService(
-  email: string,
+  identifier: string,
   password: string
 ): Promise<{ accessToken: string; refreshToken: string; user: Omit<IUser, 'password'> }> {
-  // Explicitly select password (it's excluded by default)
-  const user = await User.findOne({ email, isActive: true }).select('+password +refreshTokens');
+  const cleanId = (identifier || '').trim();
+  const escapedId = cleanId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  // Find user by email, name/username (case-insensitive), or phone
+  const user = await User.findOne({
+    $or: [
+      { email: cleanId.toLowerCase() },
+      { name: { $regex: `^${escapedId}$`, $options: 'i' } },
+      { phone: cleanId },
+    ],
+    isActive: true,
+  }).select('+password +refreshTokens');
 
   if (!user) {
-    throw new UnauthorizedError('Invalid email or password');
+    throw new UnauthorizedError('Invalid username/email or password');
   }
 
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
-    throw new UnauthorizedError('Invalid email or password');
+    throw new UnauthorizedError('Invalid username/email or password');
   }
 
   const payload: AuthUser = {
@@ -48,7 +58,7 @@ export async function loginService(
   user.lastLogin = new Date();
   await user.save();
 
-  logger.info(`User logged in: ${email}`);
+  logger.info(`User logged in: ${user.email}`);
 
   return { accessToken, refreshToken, user: user.toSafeObject() as Omit<IUser, 'password'> };
 }

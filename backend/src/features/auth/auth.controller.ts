@@ -15,8 +15,9 @@ import { User } from '../users/user.model';
 import { NotFoundError } from '../../middleware/error.middleware';
 
 export async function login(req: AuthRequest, res: Response): Promise<void> {
-  const { email, password } = req.body;
-  const result = await loginService(email, password);
+  const { email, username, identifier, password } = req.body;
+  const loginId = username || identifier || email;
+  const result = await loginService(loginId, password);
   successResponse(res, result, 'Login successful');
 }
 

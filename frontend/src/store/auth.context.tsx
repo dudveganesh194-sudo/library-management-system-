@@ -87,8 +87,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('auth:logout', handleForceLogout);
   }, [refreshUser]);
 
-  const login = async (email: string, password: string): Promise<User> => {
-    const { data } = await api.post('/auth/login', { email, password });
+  const login = async (username: string, password: string): Promise<User> => {
+    const { data } = await api.post('/auth/login', { username, email: username, password });
     const { accessToken, refreshToken, user } = data.data;
 
     localStorage.setItem('accessToken', accessToken);

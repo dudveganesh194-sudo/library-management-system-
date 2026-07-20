@@ -3,12 +3,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BookOpen, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
+import { BookOpen, Eye, EyeOff, Loader2, Lock, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../store/auth.context';
 import toast from 'react-hot-toast';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email'),
+  username: z.string().min(1, 'Please enter your username or email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
@@ -29,7 +29,7 @@ export function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      const user = await login(data.email, data.password);
+      const user = await login(data.username, data.password);
       toast.success('Welcome back!');
       const target = user.role === 'super_admin' ? '/super-admin/dashboard' : from;
       navigate(target, { replace: true });
@@ -61,21 +61,21 @@ export function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-            {/* Email */}
+            {/* Username or Email */}
             <div className="space-y-1.5">
-              <label htmlFor="email" className="label text-base font-semibold">Email address</label>
+              <label htmlFor="username" className="label text-base font-semibold">Username or Email</label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@library.com"
-                  {...register('email')}
-                  className={`input pl-11 text-base ${errors.email ? 'input-error' : ''}`}
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Enter username or email"
+                  {...register('username')}
+                  className={`input pl-11 text-base ${errors.username ? 'input-error' : ''}`}
                 />
               </div>
-              {errors.email && <p className="error-msg text-sm"><span>{errors.email.message}</span></p>}
+              {errors.username && <p className="error-msg text-sm"><span>{errors.username.message}</span></p>}
             </div>
 
             {/* Password */}
