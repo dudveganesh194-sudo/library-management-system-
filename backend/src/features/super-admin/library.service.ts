@@ -458,23 +458,34 @@ export async function suspendLibrary(
     throw new AppError('Cannot suspend a deleted library', 400);
   }
 
-  library.status = LIBRARY_STATUS.SUSPENDED;
-  await library.save();
+  const updatedLibrary = (await Library.findByIdAndUpdate(
+    id,
+    { status: LIBRARY_STATUS.SUSPENDED },
+    { new: true, runValidators: false }
+  )) || library;
 
-  // Also deactivate the owner user to prevent login
-  await User.findByIdAndUpdate(library.owner, { isActive: false });
+  // Also deactivate the owner user and library staff to prevent login
+  const userFilters: any[] = [];
+  if (library.owner) userFilters.push({ _id: library.owner });
+  userFilters.push({ libraryId: library._id });
 
-  await logAction({
-    action: 'library.suspended',
-    performedBy: superAdminId,
-    targetType: 'library',
-    targetId: id,
-    details: `Suspended library "${library.name}"`,
-    ipAddress,
-  }).catch((err) => logger.error('Failed to log audit action:', err));
+  await User.updateMany({ $or: userFilters }, { isActive: false }).catch(() => {});
 
-  logger.info(`⏸️  Library suspended: "${library.name}"`);
-  return library;
+  try {
+    await logAction({
+      action: 'library.suspended',
+      performedBy: superAdminId,
+      targetType: 'library',
+      targetId: id,
+      details: `Suspended library "${updatedLibrary.name}"`,
+      ipAddress,
+    });
+  } catch (err) {
+    logger.error('Failed to log audit action:', err);
+  }
+
+  logger.info(`⏸️  Library suspended: "${updatedLibrary.name}"`);
+  return updatedLibrary;
 }
 
 // ── Activate Library ─────────────────────────────────────────────────────────
@@ -494,23 +505,34 @@ export async function activateLibrary(
     throw new AppError('Cannot activate a deleted library', 400);
   }
 
-  library.status = LIBRARY_STATUS.ACTIVE;
-  await library.save();
+  const updatedLibrary = (await Library.findByIdAndUpdate(
+    id,
+    { status: LIBRARY_STATUS.ACTIVE },
+    { new: true, runValidators: false }
+  )) || library;
 
-  // Re-activate the owner user
-  await User.findByIdAndUpdate(library.owner, { isActive: true });
+  // Re-activate owner and library staff users
+  const userFilters: any[] = [];
+  if (library.owner) userFilters.push({ _id: library.owner });
+  userFilters.push({ libraryId: library._id });
 
-  await logAction({
-    action: 'library.activated',
-    performedBy: superAdminId,
-    targetType: 'library',
-    targetId: id,
-    details: `Activated library "${library.name}"`,
-    ipAddress,
-  }).catch((err) => logger.error('Failed to log audit action:', err));
+  await User.updateMany({ $or: userFilters }, { isActive: true }).catch(() => {});
 
-  logger.info(`▶️  Library activated: "${library.name}"`);
-  return library;
+  try {
+    await logAction({
+      action: 'library.activated',
+      performedBy: superAdminId,
+      targetType: 'library',
+      targetId: id,
+      details: `Activated library "${updatedLibrary.name}"`,
+      ipAddress,
+    });
+  } catch (err) {
+    logger.error('Failed to log audit action:', err);
+  }
+
+  logger.info(`▶️  Library activated: "${updatedLibrary.name}"`);
+  return updatedLibrary;
 }
 
 // ── Delete Library (Soft Delete) ─────────────────────────────────────────────
@@ -527,19 +549,30 @@ export async function deleteLibrary(
     throw new AppError('Library is already deleted', 400);
   }
 
-  library.status = LIBRARY_STATUS.DELETED;
-  await library.save();
+  await Library.findByIdAndUpdate(
+    id,
+    { status: LIBRARY_STATUS.DELETED },
+    { new: true, runValidators: false }
+  );
 
-  await User.findByIdAndUpdate(library.owner, { isActive: false });
+  const userFilters: any[] = [];
+  if (library.owner) userFilters.push({ _id: library.owner });
+  userFilters.push({ libraryId: library._id });
 
-  await logAction({
-    action: 'library.deleted',
-    performedBy: superAdminId,
-    targetType: 'library',
-    targetId: id,
-    details: `Deleted library "${library.name}" (soft delete)`,
-    ipAddress,
-  }).catch((err) => logger.error('Failed to log audit action:', err));
+  await User.updateMany({ $or: userFilters }, { isActive: false }).catch(() => {});
+
+  try {
+    await logAction({
+      action: 'library.deleted',
+      performedBy: superAdminId,
+      targetType: 'library',
+      targetId: id,
+      details: `Deleted library "${library.name}" (soft delete)`,
+      ipAddress,
+    });
+  } catch (err) {
+    logger.error('Failed to log audit action:', err);
+  }
 
   logger.info(`🗑️  Library deleted (soft): "${library.name}"`);
 }

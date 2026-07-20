@@ -24,11 +24,19 @@ interface LogActionParams {
  * Called from other services after successful operations.
  */
 export async function logAction(params: LogActionParams): Promise<IAuditLog> {
+  const performedBy = params.performedBy && mongoose.Types.ObjectId.isValid(params.performedBy)
+    ? new mongoose.Types.ObjectId(params.performedBy)
+    : null;
+
+  const targetId = params.targetId && mongoose.Types.ObjectId.isValid(params.targetId)
+    ? new mongoose.Types.ObjectId(params.targetId)
+    : null;
+
   const log = new AuditLog({
     action: params.action,
-    performedBy: new mongoose.Types.ObjectId(params.performedBy),
+    performedBy,
     targetType: params.targetType,
-    targetId: params.targetId ? new mongoose.Types.ObjectId(params.targetId) : null,
+    targetId,
     details: params.details,
     metadata: params.metadata || {},
     ipAddress: params.ipAddress,
