@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,8 +9,9 @@ import { Settings } from '../../types';
 import { Input, Textarea } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import toast from 'react-hot-toast';
-import { Building2, Clock, Tag, Sun, Moon, Laptop, Eye } from 'lucide-react';
+import { Building2, Clock, Tag, Sun, Moon, Laptop, Eye, Lock, Check } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
+import { useAuth } from '../../store/auth.context';
 
 const settingsSchema = z.object({
   'library.name': z.string().min(1, 'Library name is required'),
@@ -25,11 +27,45 @@ type SettingsForm = z.infer<typeof settingsSchema>;
 export function SettingsPage() {
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const isOwner = user?.role === 'owner' || user?.role === 'super_admin';
+
+  const [planPrices, setPlanPrices] = useState<Record<string, number>>({});
 
   const { data: settings, isLoading } = useQuery<Settings>({
     queryKey: ['settings'],
     queryFn: async () => { const { data } = await api.get('/settings'); return data.data; },
   });
+
+  useEffect(() => {
+    if (settings?.plans) {
+      const initialMap: Record<string, number> = {};
+      settings.plans.forEach((p) => {
+        initialMap[p.type] = p.price;
+      });
+      setPlanPrices(initialMap);
+    }
+  }, [settings]);
+
+  const updatePlansMutation = useMutation({
+    mutationFn: (updatedPlans: any[]) => api.put('/settings', { plans: updatedPlans }),
+    onSuccess: () => {
+      toast.success('Membership plan charges updated!');
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to update plan charges');
+    },
+  });
+
+  const handleSavePlanCharges = () => {
+    if (!settings?.plans) return;
+    const updated = settings.plans.map((p) => ({
+      ...p,
+      price: Number(planPrices[p.type] !== undefined ? planPrices[p.type] : p.price),
+    }));
+    updatePlansMutation.mutate(updated);
+  };
 
   const { register, handleSubmit, formState: { errors } } = useForm<SettingsForm>({
     resolver: zodResolver(settingsSchema),
@@ -78,7 +114,7 @@ export function SettingsPage() {
       <div className="page-header">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Settings</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Configure your library profile and interface theme</p>
+          <p className="text-slate-500 text-sm mt-0.5">Configure your library profile, membership charges, and interface theme</p>
         </div>
       </div>
 
@@ -101,6 +137,78 @@ export function SettingsPage() {
             <Button type="submit" loading={mutation.isPending}>Save Changes</Button>
           </div>
         </form>
+      </div>
+
+      {/* Membership Plan Charges (Owner Only Editable) */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Tag className="w-4 h-4 text-brand-500" />
+            <h2 className="section-title">Membership Plan Charges</h2>
+          </div>
+          {!isOwner && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <Lock className="w-3 h-3" /> Owner Only
+            </span>
+          )}
+        </div>
+
+        <p className="text-sm text-muted-foreground mb-5">
+          {isOwner
+            ? 'Set monthly and recurring membership plan fees for your library students.'
+            : 'Only the Library Owner has access to modify monthly charges or membership plan rates.'}
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {settings?.plans.map((plan) => (
+            <div
+              key={plan.type}
+              className={`rounded-xl border p-4 transition-all ${
+                plan.isActive ? 'border-brand-500/30 bg-brand-500/5' : 'border-border opacity-50'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-foreground">{plan.name}</p>
+                <span className="text-xs text-muted-foreground">{plan.durationDays} days</span>
+              </div>
+
+              {isOwner ? (
+                <div className="relative mt-2">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">₹</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={planPrices[plan.type] !== undefined ? planPrices[plan.type] : plan.price}
+                    onChange={(e) =>
+                      setPlanPrices((prev) => ({
+                        ...prev,
+                        [plan.type]: Math.max(0, Number(e.target.value)),
+                      }))
+                    }
+                    className="input pl-7 pr-3 py-1.5 font-bold text-base text-brand-600 dark:text-brand-300 w-full"
+                  />
+                </div>
+              ) : (
+                <p className="text-xl font-bold text-brand-500 mt-2">{formatCurrency(plan.price)}</p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {isOwner && (
+          <div className="flex flex-wrap justify-between items-center mt-5 pt-4 border-t border-border gap-3">
+            <p className="text-xs text-muted-foreground">
+              Plan charges apply immediately to new registrations and fee renewals.
+            </p>
+            <Button
+              onClick={handleSavePlanCharges}
+              loading={updatePlansMutation.isPending}
+              leftIcon={<Check className="w-4 h-4" />}
+            >
+              Save Plan Charges
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Theme Settings (Appearance) */}
@@ -131,24 +239,6 @@ export function SettingsPage() {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Plans (read-only display) */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-5">
-          <Tag className="w-4 h-4 text-brand-500" />
-          <h2 className="section-title">Membership Plans</h2>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {settings?.plans.map((plan) => (
-            <div key={plan.type} className={`rounded-xl border p-4 text-center ${plan.isActive ? 'border-brand-500/30 bg-brand-500/5' : 'border-border opacity-50'}`}>
-              <p className="text-sm font-semibold text-foreground">{plan.name}</p>
-              <p className="text-xl font-bold text-brand-500 mt-1">{formatCurrency(plan.price)}</p>
-              <p className="text-xs text-muted-foreground mt-1">{plan.durationDays} days</p>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground mt-4">Plan prices can be customized via the API or by editing the database.</p>
       </div>
 
       {/* Working Hours */}

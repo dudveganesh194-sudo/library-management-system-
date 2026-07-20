@@ -11,8 +11,8 @@ router.use(requireTenant as any);
 
 router.get('/stats', seatStats as any);
 router.get('/', listSeats as any);
-router.post('/', authorize(ROLES.OWNER, ROLES.MANAGER) as any, validate(createSeatSchema), addSeat as any);
-router.post('/bulk-create', authorize(ROLES.OWNER, ROLES.MANAGER) as any, validate(bulkCreateSeatsSchema), addSeatsInBulk as any);
+router.post('/', authorize(ROLES.OWNER) as any, validate(createSeatSchema), addSeat as any);
+router.post('/bulk-create', authorize(ROLES.OWNER) as any, validate(bulkCreateSeatsSchema), addSeatsInBulk as any);
 router.get('/:id', getSeat as any);
 router.put('/:id', authorize(ROLES.OWNER, ROLES.MANAGER) as any, validate(updateSeatSchema), editSeat as any);
 router.delete('/:id', authorize(ROLES.OWNER, ROLES.MANAGER) as any, removeSeat as any);

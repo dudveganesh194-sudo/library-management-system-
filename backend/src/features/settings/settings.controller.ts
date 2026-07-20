@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../../shared/types';
 import { successResponse } from '../../shared/helpers/api-response';
 import { getSettings, updateSettings, updateLogo } from './settings.service';
+import { ForbiddenError } from '../../middleware/error.middleware';
 
 export async function fetchSettings(req: AuthRequest, res: Response): Promise<void> {
   const libId = req.user.role === 'super_admin' ? (req.query.libraryId as string) : req.libraryId;
@@ -10,6 +11,10 @@ export async function fetchSettings(req: AuthRequest, res: Response): Promise<vo
 }
 
 export async function saveSettings(req: AuthRequest, res: Response): Promise<void> {
+  const isOwnerOrSuper = req.user.role === 'owner' || req.user.role === 'super_admin';
+  if (req.body.plans && !isOwnerOrSuper) {
+    throw new ForbiddenError('Only the Library Owner can modify membership plan charges');
+  }
   const libId = req.user.role === 'super_admin' ? (req.body.libraryId || req.libraryId) : req.libraryId;
   const settings = await updateSettings(req.body, libId);
   successResponse(res, settings, 'Settings updated successfully');

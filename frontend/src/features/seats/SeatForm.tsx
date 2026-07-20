@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { api } from '../../lib/axios';
 import { Input, Select } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { useAuth } from '../../store/auth.context';
 import toast from 'react-hot-toast';
 
 const seatSchema = z.object({
@@ -24,6 +25,9 @@ interface SeatFormProps {
 }
 
 export function SeatForm({ onSuccess, onCancel }: SeatFormProps) {
+  const { user } = useAuth();
+  const isOwner = user?.role === 'owner' || user?.role === 'super_admin';
+
   const { register, handleSubmit, formState: { errors } } = useForm<any>({
     resolver: zodResolver(seatSchema),
     defaultValues: { type: 'standard', floor: 1, section: 'A', status: 'available', price: 500 },
@@ -46,7 +50,7 @@ export function SeatForm({ onSuccess, onCancel }: SeatFormProps) {
         <Input label="Section" required placeholder="A" error={errors.section?.message as any} {...register('section')} />
         <Select label="Type" required options={[{ label: 'Standard', value: 'standard' }, { label: 'Premium', value: 'premium' }]} error={errors.type?.message as any} {...register('type')} />
         <Select label="Initial Status" options={[{ label: 'Available (Reserve OFF)', value: 'available' }, { label: 'Reserved (Reserve ON)', value: 'reserved' }, { label: 'Maintenance', value: 'maintenance' }]} error={errors.status?.message as any} {...register('status')} />
-        <Input label="Monthly Price (₹)" required type="number" min={0} error={errors.price?.message as any} {...register('price')} />
+        <Input label="Monthly Price (₹)" required type="number" min={0} disabled={!isOwner} hint={!isOwner ? "🔒 Only Owner can change monthly seat price" : undefined} error={errors.price?.message as any} {...register('price')} />
       </div>
       <div className="flex justify-end gap-3 pt-2 border-t border-border">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>

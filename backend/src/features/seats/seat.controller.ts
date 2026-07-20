@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../../shared/types';
 import { successResponse, createdResponse } from '../../shared/helpers/api-response';
+import { ForbiddenError } from '../../middleware/error.middleware';
 import {
   getAllSeats, getSeatById, createSeat, updateSeat, deleteSeat,
   assignSeat, releaseSeat, getSeatStats,
@@ -20,18 +21,30 @@ export async function getSeat(req: AuthRequest, res: Response): Promise<void> {
 }
 
 export async function addSeat(req: AuthRequest, res: Response): Promise<void> {
+  const isOwnerOrSuper = req.user.role === 'owner' || req.user.role === 'super_admin';
+  if (!isOwnerOrSuper) {
+    throw new ForbiddenError('Only the Library Owner can create seats or set monthly charges');
+  }
   const libId = req.user.role === 'super_admin' ? (req.body.libraryId || req.libraryId) : req.libraryId;
   const seat = await createSeat(req.body, libId, req.user.id);
   createdResponse(res, seat, 'Seat created successfully');
 }
 
 export async function addSeatsInBulk(req: AuthRequest, res: Response): Promise<void> {
+  const isOwnerOrSuper = req.user.role === 'owner' || req.user.role === 'super_admin';
+  if (!isOwnerOrSuper) {
+    throw new ForbiddenError('Only the Library Owner can bulk-create seats or set monthly charges');
+  }
   const libId = req.user.role === 'super_admin' ? (req.body.libraryId || req.libraryId) : req.libraryId;
   const result = await bulkCreateSeats(req.body, libId, req.user.id);
   successResponse(res, result, 'Bulk seat creation completed', 201);
 }
 
 export async function editSeat(req: AuthRequest, res: Response): Promise<void> {
+  const isOwnerOrSuper = req.user.role === 'owner' || req.user.role === 'super_admin';
+  if ((req.body.price !== undefined || req.body.reservedSeatCharge !== undefined) && !isOwnerOrSuper) {
+    throw new ForbiddenError('Only the Library Owner can modify monthly seat charges');
+  }
   const libId = req.user.role === 'super_admin' ? undefined : req.libraryId;
   const seat = await updateSeat(req.params.id, req.body, libId);
   successResponse(res, seat, 'Seat updated successfully');

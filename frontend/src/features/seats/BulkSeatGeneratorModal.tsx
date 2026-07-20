@@ -6,6 +6,7 @@ import { api } from '../../lib/axios';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Input, Select } from '../../components/ui/Input';
+import { useAuth } from '../../store/auth.context';
 
 type SeatType = 'standard' | 'premium';
 
@@ -28,6 +29,9 @@ function makeSeatNumber(prefix: string, section: string, number: number, padding
 }
 
 export function BulkSeatGeneratorModal({ floors, onClose, onSuccess }: BulkSeatGeneratorModalProps) {
+  const { user } = useAuth();
+  const isOwner = user?.role === 'owner' || user?.role === 'super_admin';
+
   const [floor, setFloor] = useState(String(floors[0] ?? 1));
   const [section, setSection] = useState('A');
   const [prefix, setPrefix] = useState('');
@@ -120,8 +124,8 @@ export function BulkSeatGeneratorModal({ floors, onClose, onSuccess }: BulkSeatG
             onChange={(event) => setType(event.target.value as SeatType)}
             options={[{ label: 'Standard', value: 'standard' }, { label: 'Premium', value: 'premium' }]}
           />
-          <Input label="Monthly Price (₹)" required type="number" min={0} step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} />
-          <Input label="Reserved Seat Charge (₹)" type="number" min={0} step="0.01" value={reservedSeatCharge} onChange={(event) => setReservedSeatCharge(event.target.value)} hint="Optional one-time charge for reserving this seat." />
+          <Input label="Monthly Price (₹)" required type="number" min={0} step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} disabled={!isOwner} hint={!isOwner ? "🔒 Only Owner can set monthly charges" : undefined} />
+          <Input label="Reserved Seat Charge (₹)" type="number" min={0} step="0.01" value={reservedSeatCharge} onChange={(event) => setReservedSeatCharge(event.target.value)} hint="Optional one-time charge for reserving this seat." disabled={!isOwner} />
         </div>
 
         <section className="rounded-xl border border-border bg-surface-1/60 p-4">
