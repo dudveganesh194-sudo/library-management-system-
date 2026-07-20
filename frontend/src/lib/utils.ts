@@ -35,10 +35,17 @@ export function formatDateTime(date: string | Date): string {
   }).format(new Date(date));
 }
 
-/** Days remaining until a date */
+/** Days remaining until a date (based on real-time calendar day difference) */
 export function daysRemaining(date: string | Date): number {
-  const diff = new Date(date).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  if (!date) return 0;
+  const target = new Date(date);
+  if (isNaN(target.getTime())) return 0;
+
+  const today = new Date();
+  const targetMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+
+  return Math.round((targetMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
 }
 
 /** Capitalize first letter */
