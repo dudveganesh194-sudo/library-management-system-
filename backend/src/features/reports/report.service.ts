@@ -6,8 +6,12 @@ import mongoose from 'mongoose';
 import { Student } from '../students/student.model';
 import { Seat } from '../seats/seat.model';
 import { Payment } from '../payments/payment.model';
+import { memoryCache } from '../../shared/helpers/cache.helper';
 
 export async function getDashboardStats(libraryId?: string) {
+  const cacheKey = `reports:dashboard:${libraryId || 'all'}`;
+  const cached = memoryCache.get<any>(cacheKey);
+  if (cached) return cached;
   const now = new Date();
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
@@ -77,7 +81,7 @@ export async function getDashboardStats(libraryId?: string) {
     totalSeats += s.count;
   });
 
-  return {
+  const result = {
     students: {
       total: totalStudents,
       active: activeStudents,
@@ -101,6 +105,9 @@ export async function getDashboardStats(libraryId?: string) {
     recentPayments,
     expiringSoon,
   };
+
+  memoryCache.set(cacheKey, result, 30);
+  return result;
 }
 
 export async function getMonthlyRevenueTrend(months = 6, libraryId?: string) {

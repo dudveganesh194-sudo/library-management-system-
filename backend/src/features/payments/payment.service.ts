@@ -8,6 +8,7 @@ import { Student } from '../students/student.model';
 import { NotFoundError } from '../../middleware/error.middleware';
 import { PaginatedResult, PaginationQuery } from '../../shared/types';
 import { DEFAULT_LIMIT, DEFAULT_PAGE } from '../../shared/constants';
+import { memoryCache } from '../../shared/helpers/cache.helper';
 
 const PLAN_DAYS: Record<string, number> = {
   monthly: 30,
@@ -125,6 +126,7 @@ export async function createPayment(
   });
 
   await payment.save();
+  memoryCache.invalidatePattern('reports:');
   return payment.populate([
     { path: 'student', select: 'name studentId' },
     { path: 'collectedBy', select: 'name' },
@@ -140,6 +142,7 @@ export async function updatePayment(id: string, data: Partial<IPayment>, library
     runValidators: true,
   });
   if (!payment) throw new NotFoundError('Payment');
+  memoryCache.invalidatePattern('reports:');
   return payment;
 }
 

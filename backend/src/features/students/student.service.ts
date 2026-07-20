@@ -7,6 +7,7 @@ import { Seat } from '../seats/seat.model';
 import { NotFoundError, ConflictError } from '../../middleware/error.middleware';
 import { PaginatedResult, PaginationQuery } from '../../shared/types';
 import { DEFAULT_LIMIT, DEFAULT_PAGE, SEAT_STATUS } from '../../shared/constants';
+import { memoryCache } from '../../shared/helpers/cache.helper';
 
 async function getNextStudentId(libraryId?: string): Promise<string> {
   const filter = libraryId ? { libraryId } : {};
@@ -166,6 +167,7 @@ export async function createStudent(
     console.log('[createStudent] Skipping payment creation (not requested or zero amount)');
   }
 
+  memoryCache.invalidatePattern('reports:');
   return student;
 }
 
@@ -239,6 +241,7 @@ export async function updateStudent(
     }
   }
 
+  memoryCache.invalidatePattern('reports:');
   return student;
 }
 
@@ -258,6 +261,7 @@ export async function deleteStudent(id: string, libraryId?: string): Promise<voi
   }
 
   await student.deleteOne();
+  memoryCache.invalidatePattern('reports:');
 }
 
 export async function getStudentPayments(studentId: string, libraryId?: string): Promise<unknown[]> {
