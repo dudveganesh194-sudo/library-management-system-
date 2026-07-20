@@ -72,14 +72,16 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
   const [shiftType, setShiftType] = useState<string>(student?.shiftType || 'full_day');
   const [customHours, setCustomHours] = useState<string>(student?.shiftHours ? String(student.shiftHours) : '6');
 
-  // Payment section state for NEW student entry
-  const [recordPayment, setRecordPayment] = useState<boolean>(true);
+  // Payment section state for student entry
+  const [recordPayment, setRecordPayment] = useState<boolean>(!isEdit);
   const [paymentAmount, setPaymentAmount] = useState<string>('500');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'upi' | 'card'>('cash');
   const [paymentStartDate, setPaymentStartDate] = useState<string>(
     student?.joinDate ? student.joinDate.split('T')[0] : new Date().toISOString().split('T')[0]
   );
-  const [paymentNotes, setPaymentNotes] = useState<string>('Initial registration & membership fee');
+  const [paymentNotes, setPaymentNotes] = useState<string>(
+    isEdit ? 'Fee payment / renewal' : 'Initial registration & membership fee'
+  );
 
   const {
     register,
@@ -167,13 +169,11 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
         shiftType,
         shiftHours: finalHours,
         timeSlot: slotText,
-        ...(!isEdit && {
-          recordInitialPayment: recordPayment,
-          paymentAmount: recordPayment ? Number(paymentAmount || 0) : undefined,
-          paymentMethod: recordPayment ? paymentMethod : undefined,
-          paymentStartDate: recordPayment ? paymentStartDate || formData.joinDate : undefined,
-          paymentNotes: recordPayment ? paymentNotes : undefined,
-        }),
+        recordInitialPayment: recordPayment,
+        paymentAmount: recordPayment ? Number(paymentAmount || 0) : undefined,
+        paymentMethod: recordPayment ? paymentMethod : undefined,
+        paymentStartDate: recordPayment ? paymentStartDate || formData.joinDate : undefined,
+        paymentNotes: recordPayment ? paymentNotes : undefined,
       };
 
       if (isEdit) {
@@ -284,71 +284,71 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
         </div>
       )}
 
-      {/* Initial Fee Payment Receipt Section (When Adding New Student) */}
-      {!isEdit && (
-        <div className="rounded-xl border border-brand-500/30 bg-brand-500/5 p-4 space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-brand-500" />
-              <h3 className="text-sm font-bold text-foreground">Record Initial Fee Payment</h3>
-              <span className="text-2xs bg-brand-500/20 text-brand-600 dark:text-brand-300 font-bold px-2 py-0.5 rounded-full">
-                Auto-Updates Payments Page
-              </span>
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-brand-600 dark:text-brand-300">
-              <input
-                type="checkbox"
-                checked={recordPayment}
-                onChange={(e) => setRecordPayment(e.target.checked)}
-                className="rounded border-border text-brand-500 focus:ring-brand-500 w-4 h-4"
-              />
-              Generate Fee Receipt Now
-            </label>
+      {/* Fee Payment Receipt Section */}
+      <div className="rounded-xl border border-brand-500/30 bg-brand-500/5 p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-brand-500" />
+            <h3 className="text-sm font-bold text-foreground">
+              {isEdit ? 'Record Payment for Student' : 'Record Initial Fee Payment'}
+            </h3>
+            <span className="text-2xs bg-brand-500/20 text-brand-600 dark:text-brand-300 font-bold px-2 py-0.5 rounded-full">
+              Auto-Updates Payments Page
+            </span>
           </div>
-
-          {recordPayment && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <Input
-                label="Amount Paid (₹)"
-                type="number"
-                min={0}
-                required
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder="500"
-                hint="Auto-suggested based on plan selected"
-              />
-
-              <Select
-                label="Payment Method"
-                required
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
-                options={[
-                  { label: 'Cash', value: 'cash' },
-                  { label: 'UPI / QR', value: 'upi' },
-                  { label: 'Card / NetBanking', value: 'card' },
-                ]}
-              />
-
-              <Input
-                label="Payment Start Date"
-                type="date"
-                required
-                value={paymentStartDate}
-                onChange={(e) => setPaymentStartDate(e.target.value)}
-              />
-
-              <Input
-                label="Payment Notes / Remarks"
-                placeholder="e.g. Admission fee & 1st month plan"
-                value={paymentNotes}
-                onChange={(e) => setPaymentNotes(e.target.value)}
-              />
-            </div>
-          )}
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-brand-600 dark:text-brand-300">
+            <input
+              type="checkbox"
+              checked={recordPayment}
+              onChange={(e) => setRecordPayment(e.target.checked)}
+              className="rounded border-border text-brand-500 focus:ring-brand-500 w-4 h-4"
+            />
+            {isEdit ? 'Record Fee Receipt' : 'Generate Fee Receipt Now'}
+          </label>
         </div>
-      )}
+
+        {recordPayment && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <Input
+              label="Amount Paid (₹)"
+              type="number"
+              min={0}
+              required
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(e.target.value)}
+              placeholder="500"
+              hint="Auto-suggested based on plan selected"
+            />
+
+            <Select
+              label="Payment Method"
+              required
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value as any)}
+              options={[
+                { label: 'Cash', value: 'cash' },
+                { label: 'UPI / QR', value: 'upi' },
+                { label: 'Card / NetBanking', value: 'card' },
+              ]}
+            />
+
+            <Input
+              label="Payment Start Date"
+              type="date"
+              required
+              value={paymentStartDate}
+              onChange={(e) => setPaymentStartDate(e.target.value)}
+            />
+
+            <Input
+              label="Payment Notes / Remarks"
+              placeholder="e.g. Fee payment / renewal"
+              value={paymentNotes}
+              onChange={(e) => setPaymentNotes(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
 
       <Textarea label="Notes" placeholder="Any additional information..." {...register('notes')} />
 

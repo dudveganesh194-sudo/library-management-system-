@@ -40,7 +40,7 @@ export async function addStudent(req: AuthRequest, res: Response): Promise<void>
 export async function editStudent(req: AuthRequest, res: Response): Promise<void> {
   const files = req.files as { photo?: Express.Multer.File[]; idProof?: Express.Multer.File[] } | undefined;
   const libId = req.user.role === 'super_admin' ? undefined : req.libraryId;
-  const student = await updateStudent(req.params.id, req.body, libId, files);
+  const student = await updateStudent(req.params.id, req.body, libId, files, req.user.id);
   successResponse(res, student, 'Student updated successfully');
 }
 

@@ -171,14 +171,30 @@ export async function createStudent(
 
 export async function updateStudent(
   id: string,
-  data: Partial<IStudent>,
+  data: Record<string, any>,
   libraryId?: string,
-  files?: { photo?: Express.Multer.File[]; idProof?: Express.Multer.File[] }
+  files?: { photo?: Express.Multer.File[]; idProof?: Express.Multer.File[] },
+  updatedBy?: string
 ): Promise<IStudent> {
   const filter: Record<string, unknown> = { _id: id };
   if (libraryId) filter.libraryId = libraryId;
 
-  const updateData: Partial<IStudent> = { ...data };
+  const updateData: Record<string, any> = { ...data };
+
+  // Extract payment fields before updating student
+  const shouldRecordPayment = data.recordInitialPayment === true || String(data.recordInitialPayment) === 'true';
+  const payAmt = data.paymentAmount !== undefined && data.paymentAmount !== null && data.paymentAmount !== ''
+    ? Number(data.paymentAmount)
+    : undefined;
+  const payMethod = data.paymentMethod || 'cash';
+  const payStartDate = data.paymentStartDate;
+  const payNotes = data.paymentNotes;
+
+  delete updateData.recordInitialPayment;
+  delete updateData.paymentAmount;
+  delete updateData.paymentMethod;
+  delete updateData.paymentStartDate;
+  delete updateData.paymentNotes;
 
   if (files?.photo?.[0]) {
     const file = files.photo[0] as any;
@@ -197,6 +213,32 @@ export async function updateStudent(
   });
 
   if (!student) throw new NotFoundError('Student');
+
+  // Automatically record payment if requested
+  if (shouldRecordPayment || (payAmt !== undefined && payAmt > 0)) {
+    try {
+      const { createPayment } = await import('../payments/payment.service');
+      const targetLibId = libraryId || (student.libraryId ? String(student.libraryId) : undefined);
+      await createPayment(
+        {
+          student: student._id,
+          seat: student.seatId || undefined,
+          amount: payAmt !== undefined ? payAmt : 500,
+          method: (payMethod as any) || 'cash',
+          type: 'renewal',
+          plan: student.plan || 'monthly',
+          status: 'paid' as any,
+          startDate: payStartDate ? new Date(payStartDate) : new Date(),
+          notes: payNotes || 'Payment updated from student management',
+        },
+        updatedBy || String(student.createdBy || 'system'),
+        targetLibId
+      );
+    } catch (err: any) {
+      console.error('Error recording payment on student update:', err?.stack || err?.message || err);
+    }
+  }
+
   return student;
 }
 

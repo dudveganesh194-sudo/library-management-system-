@@ -45,4 +45,9 @@ export const updateStudentSchema = Joi.object({
   timeSlot: Joi.string().allow('', null),
   status: Joi.string().valid(...Object.values(STUDENT_STATUS)),
   notes: Joi.string().trim().allow('', null),
+  recordInitialPayment: Joi.boolean().allow(null),
+  paymentAmount: Joi.number().min(0).allow(null, ''),
+  paymentMethod: Joi.string().valid('cash', 'upi', 'card').allow('', null),
+  paymentStartDate: Joi.date().allow('', null),
+  paymentNotes: Joi.string().trim().allow('', null),
 });
