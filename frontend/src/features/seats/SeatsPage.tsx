@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ChevronDown, FileSpreadsheet, Layers3, Plus, UserCheck, UserX, Wrench, Settings2, Trash2, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ChevronDown, FileSpreadsheet, Layers3, Plus, UserCheck, UserX, Wrench, Settings2, Trash2, Bookmark, BookmarkCheck, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/axios';
 import { Seat, Student } from '../../types';
@@ -16,6 +16,8 @@ import { ConfirmReleaseModal } from './ConfirmReleaseModal';
 import { ConfirmDeleteSeatModal } from './ConfirmDeleteSeatModal';
 import { BulkSeatGeneratorModal } from './BulkSeatGeneratorModal';
 import { ChangeSeatStatusModal } from './ChangeSeatStatusModal';
+import { AddFloorModal } from './AddFloorModal';
+import { ConfirmDeleteFloorModal } from './ConfirmDeleteFloorModal';
 import { useAuth } from '../../store/auth.context';
 import { cn } from '../../lib/utils';
 
@@ -32,6 +34,8 @@ export function SeatsPage() {
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [addFloorOpen, setAddFloorOpen] = useState(false);
+  const [deleteFloorItem, setDeleteFloorItem] = useState<any | null>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [assignSeat, setAssignSeat] = useState<Seat | null>(null);
   const [detailSeat, setDetailSeat] = useState<Seat | null>(null);
@@ -50,7 +54,7 @@ export function SeatsPage() {
     return () => document.removeEventListener('mousedown', closeMenu);
   }, []);
 
-  const { data: seats, isLoading } = useQuery<Seat[]>({
+  const { data: seats, isLoading: seatsLoading } = useQuery<Seat[]>({
     queryKey: ['seats', filterStatus, filterFloor],
     queryFn: async () => {
       const { data } = await api.get('/seats', {
@@ -60,12 +64,23 @@ export function SeatsPage() {
     },
   });
 
+  const { data: floorList = [], isLoading: floorsLoading } = useQuery<any[]>({
+    queryKey: ['floors'],
+    queryFn: async () => {
+      const { data } = await api.get('/floors');
+      return data.data || [];
+    },
+  });
+
   const canManage = user?.role === 'owner' || user?.role === 'manager';
-  const floors = [...new Set(seats?.map((s) => s.floor) || [])].sort();
-  const grouped = floors.reduce<Record<number, Seat[]>>((acc, floor) => {
-    acc[floor] = seats?.filter((s) => s.floor === floor) || [];
-    return acc;
-  }, {});
+  const isLoading = seatsLoading || floorsLoading;
+
+  const configuredFloors = floorList || [];
+  const seatFloorNumbers = [...new Set(seats?.map((s) => s.floor) || [])];
+  const allFloorNumbers = [...new Set([...configuredFloors.map((f: any) => f.floorNumber), ...seatFloorNumbers])].sort((a, b) => a - b);
+
+  const floorMap = new Map<number, any>();
+  configuredFloors.forEach((f: any) => floorMap.set(f.floorNumber, f));
 
   const stats = {
     total: seats?.length || 0,
@@ -102,43 +117,49 @@ export function SeatsPage() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Seat Management</h1>
+          <h1 className="text-3xl font-bold text-foreground">Seat & Floor Management</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {stats.occupied}/{stats.total} occupied · {stats.available} available
+            {stats.occupied}/{stats.total} occupied · {stats.available} available · {allFloorNumbers.length} floors
           </p>
         </div>
         {canManage && (
-          <div className="relative" ref={addMenuRef}>
-            <Button
-              leftIcon={<Plus className="w-4 h-4" />}
-              rightIcon={<ChevronDown className="w-4 h-4" />}
-              onClick={() => setAddMenuOpen((open) => !open)}
-              aria-haspopup="menu"
-              aria-expanded={addMenuOpen}
-            >
-              Add Seat
-            </Button>
-            {addMenuOpen && (
-              <div role="menu" className="absolute right-0 z-30 mt-2 w-56 rounded-xl border border-border bg-card p-1.5 shadow-card animate-fade-in">
-                <button
-                  role="menuitem"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground hover:bg-surface-1"
-                  onClick={() => { setAddOpen(true); setAddMenuOpen(false); }}
-                >
-                  <Plus className="w-4 h-4 text-brand-500" /> Add Single Seat
-                </button>
-                <button
-                  role="menuitem"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground hover:bg-surface-1"
-                  onClick={() => { setBulkOpen(true); setAddMenuOpen(false); }}
-                >
-                  <Layers3 className="w-4 h-4 text-brand-500" /> Bulk Seat Generator
-                </button>
-                <button role="menuitem" disabled className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground opacity-60">
-                  <FileSpreadsheet className="w-4 h-4" /> Import Excel <span className="ml-auto rounded-full bg-surface-4 px-2 py-0.5 text-2xs">Coming Soon</span>
-                </button>
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <div className="relative" ref={addMenuRef}>
+              <Button
+                leftIcon={<Plus className="w-4 h-4" />}
+                rightIcon={<ChevronDown className="w-4 h-4" />}
+                onClick={() => setAddMenuOpen((open) => !open)}
+                aria-haspopup="menu"
+                aria-expanded={addMenuOpen}
+              >
+                Add / Action
+              </Button>
+              {addMenuOpen && (
+                <div role="menu" className="absolute right-0 z-30 mt-2 w-56 rounded-xl border border-border bg-card p-1.5 shadow-card animate-fade-in">
+                  <button
+                    role="menuitem"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground hover:bg-surface-1 font-medium"
+                    onClick={() => { setAddFloorOpen(true); setAddMenuOpen(false); }}
+                  >
+                    <Layers className="w-4 h-4 text-brand-500" /> Add New Floor
+                  </button>
+                  <button
+                    role="menuitem"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground hover:bg-surface-1"
+                    onClick={() => { setAddOpen(true); setAddMenuOpen(false); }}
+                  >
+                    <Plus className="w-4 h-4 text-brand-500" /> Add Single Seat
+                  </button>
+                  <button
+                    role="menuitem"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground hover:bg-surface-1"
+                    onClick={() => { setBulkOpen(true); setAddMenuOpen(false); }}
+                  >
+                    <Layers3 className="w-4 h-4 text-brand-500" /> Bulk Seat Generator
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -176,7 +197,14 @@ export function SeatsPage() {
             onChange={(e) => setFilterFloor(e.target.value)}
           >
             <option value="">All Floors</option>
-            {floors.map((f) => <option key={f} value={f}>Floor {f}</option>)}
+            {allFloorNumbers.map((f) => {
+              const info = floorMap.get(f);
+              return (
+                <option key={f} value={f}>
+                  Floor {f} {info?.name ? `(${info.name})` : ''}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>
@@ -188,50 +216,99 @@ export function SeatsPage() {
             <div key={i} className="skeleton aspect-square rounded-xl" />
           ))}
         </div>
+      ) : allFloorNumbers.length === 0 ? (
+        <div className="card p-8 text-center space-y-3">
+          <Layers className="w-12 h-12 mx-auto text-muted-foreground opacity-40" />
+          <p className="text-foreground font-semibold">No Floors or Seats Found</p>
+          <p className="text-xs text-muted-foreground">Click "Add / Action" to create your first floor or bulk generate seats.</p>
+          {canManage && (
+            <Button size="sm" onClick={() => setAddFloorOpen(true)} leftIcon={<Plus className="w-4 h-4" />}>
+              Add Floor
+            </Button>
+          )}
+        </div>
       ) : (
-        Object.entries(grouped).map(([floor, floorSeats]) => (
-          <div key={floor} className="card p-3 sm:p-5">
-            <h2 className="section-title mb-3 sm:mb-4">Floor {floor}</h2>
-            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3">
-              {floorSeats.map((seat) => (
-                <div
-                  key={seat._id}
-                  onClick={() => handleSeatClick(seat)}
-                  className={cn(
-                    'relative border rounded-xl p-2.5 sm:p-3 cursor-pointer transition-all duration-300 group min-h-[68px] sm:min-h-[74px] flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md',
-                    STATUS_COLORS[seat.status] || 'border-surface-5'
-                  )}
-                  title={`${seat.seatNumber} — ${seat.status}${seat.currentStudent && typeof seat.currentStudent === 'object' ? ` (${seat.currentStudent.name})` : ''}`}
-                >
-                  <p className="text-sm font-extrabold text-center text-foreground font-mono leading-none">{seat.seatNumber}</p>
-                  {seat.type === 'premium' && (
-                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-warning rounded-full shadow-sm" title="Premium" />
-                  )}
+        allFloorNumbers.map((floorNum) => {
+          const floorInfo = floorMap.get(floorNum);
+          const floorSeats = seats?.filter((s) => s.floor === floorNum) || [];
 
-                  {/* Student name or status */}
-                  {seat.status === 'occupied' && seat.currentStudent && typeof seat.currentStudent === 'object' ? (
-                    <p className="text-xs font-medium text-center text-slate-700 dark:text-slate-200 mt-1.5 truncate w-full" title={seat.currentStudent.name}>
-                      {seat.currentStudent.name}
-                    </p>
-                  ) : seat.status === 'available' ? (
-                    <p className="text-xs font-bold text-center text-emerald-600 dark:text-emerald-400 mt-1.5 truncate w-full tracking-wide">Available</p>
-                  ) : seat.status === 'reserved' ? (
-                    <p className="text-xs font-bold text-center text-amber-600 dark:text-amber-400 mt-1.5 truncate w-full tracking-wide">Reserved</p>
-                  ) : (
-                    <p className="text-xs font-bold text-center text-red-600 dark:text-red-400 mt-1.5 truncate w-full tracking-wide">Maint.</p>
-                  )}
-
-                  {/* Hover Actions */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-card/90 rounded-xl">
-                    <span className="text-2xs text-brand-500 font-semibold flex items-center gap-1">
-                      <Settings2 className="w-3 h-3" /> Manage
-                    </span>
-                  </div>
+          return (
+            <div key={floorNum} className="card p-3 sm:p-5">
+              <div className="flex items-center justify-between mb-3 sm:mb-4 pb-2 border-b border-border">
+                <div>
+                  <h2 className="section-title">
+                    Floor {floorNum} {floorInfo?.name ? `— ${floorInfo.name}` : ''}
+                  </h2>
+                  <p className="text-2xs text-muted-foreground mt-0.5">
+                    {floorSeats.length} seat(s) · {floorSeats.filter((s) => s.status === 'occupied').length} occupied
+                    {floorInfo?.description ? ` · ${floorInfo.description}` : ''}
+                  </p>
                 </div>
-              ))}
+
+                {canManage && floorInfo && (
+                  <button
+                    onClick={() => setDeleteFloorItem(floorInfo)}
+                    className="text-xs text-danger/80 hover:text-danger flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-danger/20 hover:bg-danger/10 transition-all font-medium"
+                    title={`Delete Floor ${floorNum}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Floor</span>
+                  </button>
+                )}
+              </div>
+
+              {floorSeats.length === 0 ? (
+                <div className="p-6 text-center rounded-xl border border-dashed border-border text-muted-foreground text-xs space-y-2">
+                  <p>No seats generated on Floor {floorNum} yet.</p>
+                  {canManage && (
+                    <Button size="sm" variant="secondary" onClick={() => setBulkOpen(true)} leftIcon={<Plus className="w-3.5 h-3.5" />}>
+                      Generate Seats for Floor {floorNum}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3">
+                  {floorSeats.map((seat) => (
+                    <div
+                      key={seat._id}
+                      onClick={() => handleSeatClick(seat)}
+                      className={cn(
+                        'relative border rounded-xl p-2.5 sm:p-3 cursor-pointer transition-all duration-300 group min-h-[68px] sm:min-h-[74px] flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md',
+                        STATUS_COLORS[seat.status] || 'border-surface-5'
+                      )}
+                      title={`${seat.seatNumber} — ${seat.status}${seat.currentStudent && typeof seat.currentStudent === 'object' ? ` (${seat.currentStudent.name})` : ''}`}
+                    >
+                      <p className="text-sm font-extrabold text-center text-foreground font-mono leading-none">{seat.seatNumber}</p>
+                      {seat.type === 'premium' && (
+                        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-warning rounded-full shadow-sm" title="Premium" />
+                      )}
+
+                      {/* Student name or status */}
+                      {seat.status === 'occupied' && seat.currentStudent && typeof seat.currentStudent === 'object' ? (
+                        <p className="text-xs font-medium text-center text-slate-700 dark:text-slate-200 mt-1.5 truncate w-full" title={seat.currentStudent.name}>
+                          {seat.currentStudent.name}
+                        </p>
+                      ) : seat.status === 'available' ? (
+                        <p className="text-xs font-bold text-center text-emerald-600 dark:text-emerald-400 mt-1.5 truncate w-full tracking-wide">Available</p>
+                      ) : seat.status === 'reserved' ? (
+                        <p className="text-xs font-bold text-center text-amber-600 dark:text-amber-400 mt-1.5 truncate w-full tracking-wide">Reserved</p>
+                      ) : (
+                        <p className="text-xs font-bold text-center text-red-600 dark:text-red-400 mt-1.5 truncate w-full tracking-wide">Maint.</p>
+                      )}
+
+                      {/* Hover Actions */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-card/90 rounded-xl">
+                        <span className="text-2xs text-brand-500 font-semibold flex items-center gap-1">
+                          <Settings2 className="w-3 h-3" /> Manage
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))
+          );
+        })
       )}
 
       {/* Table View */}
@@ -353,11 +430,33 @@ export function SeatsPage() {
         />
       </Modal>
 
+      {/* Bulk Seat Generator Modal */}
       {bulkOpen && (
         <BulkSeatGeneratorModal
-          floors={floors}
+          floors={allFloorNumbers}
           onClose={() => setBulkOpen(false)}
-          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['seats'] })}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['seats'] });
+            queryClient.invalidateQueries({ queryKey: ['floors'] });
+          }}
+        />
+      )}
+
+      {/* Add Floor Modal */}
+      {addFloorOpen && (
+        <AddFloorModal
+          existingFloorNumbers={allFloorNumbers}
+          onClose={() => setAddFloorOpen(false)}
+          onSuccess={() => setAddFloorOpen(false)}
+        />
+      )}
+
+      {/* Confirm Delete Floor Modal */}
+      {deleteFloorItem && (
+        <ConfirmDeleteFloorModal
+          floor={deleteFloorItem}
+          onClose={() => setDeleteFloorItem(null)}
+          onSuccess={() => setDeleteFloorItem(null)}
         />
       )}
 
