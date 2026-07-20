@@ -45,7 +45,8 @@ export async function getDashboardStats(libraryId?: string) {
     Payment.find({ ...filterRaw, status: 'paid' })
       .populate('student', 'name studentId')
       .sort({ createdAt: -1 })
-      .limit(5),
+      .limit(5)
+      .lean(),
     Payment.find({
       ...filterRaw,
       endDate: { $gte: now, $lte: sevenDaysFromNow },
@@ -53,7 +54,8 @@ export async function getDashboardStats(libraryId?: string) {
     })
       .populate('student', 'name studentId phone')
       .sort({ endDate: 1 })
-      .limit(10),
+      .limit(10)
+      .lean(),
     Student.countDocuments({ ...filterRaw, createdAt: { $gte: startOfMonth } }),
     Student.countDocuments({ ...filterRaw, createdAt: { $gte: startOfToday, $lte: endOfToday } }),
     Payment.countDocuments({
@@ -102,47 +104,59 @@ export async function getDashboardStats(libraryId?: string) {
 }
 
 export async function getMonthlyRevenueTrend(months = 6, libraryId?: string) {
-  const results = [];
   const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
   const filterObj = libraryId ? { libraryId: new mongoose.Types.ObjectId(libraryId) } : {};
 
-  for (let i = months - 1; i >= 0; i--) {
-    const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-
-    const result = await Payment.aggregate([
-      { $match: { ...filterObj, status: 'paid', createdAt: { $gte: start, $lte: end } } },
-      {
-        $group: {
-          _id: '$method',
-          total: { $sum: '$amount' },
-          count: { $sum: 1 },
-        },
+  const aggregatedResults = await Payment.aggregate([
+    {
+      $match: {
+        ...filterObj,
+        status: 'paid',
+        createdAt: { $gte: startDate },
       },
-    ]);
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          method: { $toLower: '$method' },
+        },
+        total: { $sum: '$amount' },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
 
-    let total = 0;
-    let cash = 0;
-    let upi = 0;
-    let card = 0;
-    let count = 0;
+  const resultMap = new Map<string, { total: number; cash: number; upi: number; card: number; count: number }>();
 
-    result.forEach((r: any) => {
-      total += r.total;
-      count += r.count;
-      const m = (r._id || '').toLowerCase();
-      if (m === 'cash') cash = r.total;
-      else if (m === 'upi') upi = r.total;
-      else if (m === 'card') card = r.total;
-    });
+  aggregatedResults.forEach((r: any) => {
+    const key = `${r._id.year}-${r._id.month}`;
+    if (!resultMap.has(key)) {
+      resultMap.set(key, { total: 0, cash: 0, upi: 0, card: 0, count: 0 });
+    }
+    const entry = resultMap.get(key)!;
+    entry.total += r.total;
+    entry.count += r.count;
+    if (r._id.method === 'cash') entry.cash += r.total;
+    else if (r._id.method === 'upi') entry.upi += r.total;
+    else if (r._id.method === 'card') entry.card += r.total;
+  });
+
+  const results = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    const entry = resultMap.get(key) || { total: 0, cash: 0, upi: 0, card: 0, count: 0 };
 
     results.push({
-      month: start.toLocaleString('default', { month: 'short', year: 'numeric' }),
-      revenue: total,
-      cash,
-      upi,
-      card,
-      transactions: count,
+      month: date.toLocaleString('default', { month: 'short', year: 'numeric' }),
+      revenue: entry.total,
+      cash: entry.cash,
+      upi: entry.upi,
+      card: entry.card,
+      transactions: entry.count,
     });
   }
 
@@ -182,7 +196,7 @@ export async function getStaffCollectionStats(libraryId?: string) {
   ];
 
   const User = mongoose.model('User');
-  const users = await User.find({ _id: { $in: userIds } }).select('name role email');
+  const users = await User.find({ _id: { $in: userIds } }).select('name role email').lean();
   const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
 
   const studentCountMap: Record<string, number> = {};
@@ -313,7 +327,8 @@ export async function getExpiringMembers(days = 7, libraryId?: string) {
   return Payment.find(filterRaw)
     .populate('student', 'name studentId phone plan status')
     .populate('seat', 'seatNumber')
-    .sort({ endDate: 1 });
+    .sort({ endDate: 1 })
+    .lean();
 }
 
 export async function getOccupancyReport(libraryId?: string) {
@@ -322,5 +337,6 @@ export async function getOccupancyReport(libraryId?: string) {
 
   return Seat.find(filterRaw)
     .populate('currentStudent', 'name studentId plan')
-    .sort({ floor: 1, seatNumber: 1 });
+    .sort({ floor: 1, seatNumber: 1 })
+    .lean();
 }

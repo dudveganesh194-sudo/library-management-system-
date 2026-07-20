@@ -55,11 +55,12 @@ export async function getAllPayments(
       .populate('collectedBy', 'name role email')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit),
+      .limit(limit)
+      .lean(),
     Payment.countDocuments(filter),
   ]);
 
-  return { data: payments, total, page, limit, totalPages: Math.ceil(total / limit) };
+  return { data: payments as any, total, page, limit, totalPages: Math.ceil(total / limit) };
 }
 
 export async function getPaymentById(id: string, libraryId?: string): Promise<IPayment> {
@@ -69,9 +70,10 @@ export async function getPaymentById(id: string, libraryId?: string): Promise<IP
   const payment = await Payment.findOne(filter)
     .populate('student', 'name studentId phone email address')
     .populate('seat', 'seatNumber floor section')
-    .populate('collectedBy', 'name email');
+    .populate('collectedBy', 'name email')
+    .lean();
   if (!payment) throw new NotFoundError('Payment');
-  return payment;
+  return payment as any;
 }
 
 export async function createPayment(

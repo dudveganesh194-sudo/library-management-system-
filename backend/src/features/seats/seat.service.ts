@@ -122,9 +122,13 @@ export async function getAllSeats(query: {
     .map((s: any) => (s.currentStudent._id || s.currentStudent).toString());
 
   if (occupiedStudentIds.length > 0) {
-    const payments = await Payment.find({
-      student: { $in: occupiedStudentIds },
-    }).sort({ createdAt: -1 });
+    const paymentFilter: Record<string, unknown> = { student: { $in: occupiedStudentIds } };
+    if (query.libraryId) paymentFilter.libraryId = query.libraryId;
+
+    const payments = await Payment.find(paymentFilter)
+      .select('student amount createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
 
     const paymentMap = new Map<string, number>();
     payments.forEach((p) => {

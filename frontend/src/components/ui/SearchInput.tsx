@@ -1,5 +1,5 @@
 import { Search, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { debounce } from '../../lib/utils';
 
 interface SearchInputProps {
@@ -10,8 +10,16 @@ interface SearchInputProps {
 
 export function SearchInput({ placeholder = 'Search...', onSearch, className }: SearchInputProps) {
   const [value, setValue] = useState('');
+  const onSearchRef = useRef(onSearch);
 
-  const debouncedSearch = useCallback(debounce((v: unknown) => onSearch(v as string), 400), [onSearch]);
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
+  const debouncedSearch = useMemo(
+    () => debounce((v: unknown) => onSearchRef.current(v as string), 400),
+    []
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);

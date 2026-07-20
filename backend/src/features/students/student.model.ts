@@ -116,6 +116,9 @@ const studentSchema = new Schema<IStudent>(
 studentSchema.index({ libraryId: 1, studentId: 1 }, { unique: true, sparse: true });
 studentSchema.index({ libraryId: 1, phone: 1 });
 studentSchema.index({ libraryId: 1, status: 1 });
+studentSchema.index({ libraryId: 1, createdAt: -1 });
+studentSchema.index({ libraryId: 1, createdBy: 1 });
+studentSchema.index({ libraryId: 1, seatId: 1 });
 studentSchema.index({ name: 'text', email: 'text', phone: 'text', studentId: 'text' });
 
 export const Student: Model<IStudent> = mongoose.model<IStudent>('Student', studentSchema);

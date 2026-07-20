@@ -93,5 +93,7 @@ const seatSchema = new Schema<ISeat>(
 seatSchema.index({ libraryId: 1, seatNumber: 1 }, { unique: true, sparse: true });
 seatSchema.index({ libraryId: 1, status: 1 });
 seatSchema.index({ libraryId: 1, floor: 1, section: 1 });
+seatSchema.index({ libraryId: 1, floor: 1, seatNumber: 1 });
+seatSchema.index({ libraryId: 1, currentStudent: 1 });
 
 export const Seat: Model<ISeat> = mongoose.model<ISeat>('Seat', seatSchema);

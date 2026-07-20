@@ -9,6 +9,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
 import { env } from './config/env';
@@ -26,6 +27,9 @@ import floorRouter from './features/floors/floor.routes';
 import superAdminRouter from './features/super-admin/super-admin.routes';
 
 const app = express();
+
+// ── Compression Middleware ───────────────────────────────────────────────────
+app.use(compression());
 
 // ── Trust Proxy (Required for Render/Cloudflare/Vercel reverse proxies) ─────
 app.set('trust proxy', 1);

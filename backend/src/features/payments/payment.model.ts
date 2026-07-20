@@ -107,6 +107,10 @@ paymentSchema.index({ libraryId: 1, student: 1 });
 paymentSchema.index({ libraryId: 1, status: 1 });
 paymentSchema.index({ libraryId: 1, createdAt: -1 });
 paymentSchema.index({ libraryId: 1, endDate: 1 }); // For expiry queries
+paymentSchema.index({ libraryId: 1, status: 1, createdAt: -1 });
+paymentSchema.index({ libraryId: 1, status: 1, endDate: 1 });
+paymentSchema.index({ libraryId: 1, collectedBy: 1, status: 1 });
+paymentSchema.index({ libraryId: 1, method: 1, status: 1 });
 
 // ── Pre-save: generate receipt number ────────────────────────────────────────
 paymentSchema.pre('save', function (next) {

@@ -10,30 +10,13 @@ import { DEFAULT_LIMIT, DEFAULT_PAGE, SEAT_STATUS } from '../../shared/constants
 
 async function getNextStudentId(libraryId?: string): Promise<string> {
   const filter = libraryId ? { libraryId } : {};
-  const last = await Student.findOne(filter, { studentId: 1 }).sort({ createdAt: -1 });
+  const last = await Student.findOne(filter, { studentId: 1 }).sort({ createdAt: -1 }).lean();
   if (!last) return 'STU-01';
 
   const parts = last.studentId.split('-');
   const num = parts[1] ? parseInt(parts[1], 10) + 1 : 1;
   return `STU-${String(num).padStart(2, '0')}`;
 }
-
-// Auto-migrate long 5-digit STU-0000x IDs to clean STU-0x format
-setTimeout(async () => {
-  try {
-    const oldStudents = await Student.find({ studentId: /^STU-0{2,}/ });
-    for (const s of oldStudents) {
-      const parts = s.studentId.split('-');
-      const num = parseInt(parts[1], 10);
-      if (!isNaN(num)) {
-        const compactId = `STU-${String(num).padStart(2, '0')}`;
-        await Student.updateOne({ _id: s._id }, { studentId: compactId });
-      }
-    }
-  } catch (err) {
-    // Silent catch if db not ready yet
-  }
-}, 3000);
 
 export async function getAllStudents(
   query: PaginationQuery & { status?: string; plan?: string; createdBy?: string; libraryId?: string }
@@ -65,11 +48,12 @@ export async function getAllStudents(
       .populate('createdBy', 'name role email')
       .sort({ [sortField]: sortOrder })
       .skip(skip)
-      .limit(limit),
+      .limit(limit)
+      .lean(),
     Student.countDocuments(filter),
   ]);
 
-  return { data: students, total, page, limit, totalPages: Math.ceil(total / limit) };
+  return { data: students as any, total, page, limit, totalPages: Math.ceil(total / limit) };
 }
 
 export async function getStudentById(id: string, libraryId?: string): Promise<IStudent> {
@@ -78,10 +62,11 @@ export async function getStudentById(id: string, libraryId?: string): Promise<IS
 
   const student = await Student.findOne(filter)
     .populate('seatId', 'seatNumber floor section type price')
-    .populate('createdBy', 'name email');
+    .populate('createdBy', 'name email')
+    .lean();
 
   if (!student) throw new NotFoundError('Student');
-  return student;
+  return student as any;
 }
 
 export async function createStudent(
@@ -191,5 +176,6 @@ export async function getStudentPayments(studentId: string, libraryId?: string):
   return Payment.find(filter)
     .populate('seat', 'seatNumber')
     .populate('collectedBy', 'name')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 }
