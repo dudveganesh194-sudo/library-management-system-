@@ -11,6 +11,7 @@ export const createSeatSchema = Joi.object({
   reservedSeatCharge: Joi.number().min(0).allow(null),
   amenities: Joi.array().items(Joi.string()).default([]),
   notes: Joi.string().trim().allow('', null),
+  libraryId: Joi.string().hex().length(24).optional().allow('', null),
 });
 
 export const updateSeatSchema = Joi.object({
@@ -39,6 +40,7 @@ export const bulkCreateSeatsSchema = Joi.object({
   type: Joi.string().valid(...Object.values(SEAT_TYPE)).default('standard'),
   price: Joi.number().min(0).required(),
   reservedSeatCharge: Joi.number().min(0).allow(null),
+  libraryId: Joi.string().hex().length(24).optional().allow('', null),
 }).custom((value, helpers) => {
   if (value.endNumber - value.startNumber + 1 > 500) {
     return helpers.error('any.invalid');
