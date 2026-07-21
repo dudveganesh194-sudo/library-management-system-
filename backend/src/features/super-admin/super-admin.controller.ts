@@ -58,6 +58,18 @@ export async function updateLibrary(req: AuthRequest, res: Response): Promise<vo
   successResponse(res, library, 'Library updated successfully');
 }
 
+export async function grantTrial(req: AuthRequest, res: Response): Promise<void> {
+  const ipAddress = req.ip || req.socket.remoteAddress;
+  const { trialDays } = req.body;
+  const library = await libraryService.grantTrial(
+    req.params.id,
+    trialDays,
+    req.user.id,
+    ipAddress
+  );
+  successResponse(res, library, `Free trial of ${trialDays} days granted successfully`);
+}
+
 export async function suspendLibrary(req: AuthRequest, res: Response): Promise<void> {
   const ipAddress = req.ip || req.socket.remoteAddress;
   const library = await libraryService.suspendLibrary(req.params.id, req.user.id, ipAddress);

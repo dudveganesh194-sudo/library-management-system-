@@ -126,7 +126,7 @@ export type PaymentMethod = 'cash' | 'upi' | 'card';
 export type PaymentType = 'new' | 'renewal' | 'penalty';
 export type PaymentStatus = 'paid' | 'pending' | 'overdue';
 export type LibraryStatus = 'active' | 'suspended' | 'deleted';
-export type LibraryPaymentStatus = 'paid' | 'unpaid' | 'pending';
+export type LibraryPaymentStatus = 'paid' | 'unpaid' | 'pending' | 'trial';
 
 // ── Super Admin Types ────────────────────────────────────────────────────────
 
@@ -155,6 +155,8 @@ export interface Library {
     maxSeats: number;
   } | string | null;
   paymentStatus: LibraryPaymentStatus;
+  isTrial?: boolean;
+  trialEndDate?: string;
   subscriptionStartDate?: string;
   subscriptionEndDate?: string;
   seatsLimit: number;

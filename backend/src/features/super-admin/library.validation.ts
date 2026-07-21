@@ -65,7 +65,9 @@ export const createLibrarySchema = z
 
     subscriptionId: z.string().optional(),
 
-    paymentStatus: z.enum(['paid', 'unpaid', 'pending']).default('paid'),
+    paymentStatus: z.enum(['paid', 'unpaid', 'pending', 'trial']).default('paid'),
+    isTrial: z.boolean().optional(),
+    trialDays: z.number().int().min(1, 'Trial days must be at least 1').max(365).optional(),
 
     subscriptionStartDate: z.string().optional(),
     subscriptionEndDate: z.string().optional(),
@@ -95,7 +97,9 @@ export const updateLibrarySchema = z.object({
   state: z.string().min(2).max(100).trim().optional(),
   pinCode: z.string().regex(/^\d{6}$/, 'Pin code must be 6 digits').optional(),
   subscriptionId: z.string().optional(),
-  paymentStatus: z.enum(['paid', 'unpaid', 'pending']).optional(),
+  paymentStatus: z.enum(['paid', 'unpaid', 'pending', 'trial']).optional(),
+  isTrial: z.boolean().optional(),
+  trialDays: z.number().int().min(1).max(365).optional(),
   subscriptionStartDate: z.string().optional(),
   subscriptionEndDate: z.string().optional(),
   seatsLimit: z.number().int().min(1).max(10000).optional(),
@@ -104,13 +108,24 @@ export const updateLibrarySchema = z.object({
 
 export type UpdateLibraryInput = z.infer<typeof updateLibrarySchema>;
 
+// ── Grant Trial Schema ───────────────────────────────────────────────────────
+export const grantTrialSchema = z.object({
+  trialDays: z
+    .number()
+    .int('Trial days must be a whole number')
+    .min(1, 'Trial duration must be at least 1 day')
+    .max(365, 'Trial duration cannot exceed 365 days'),
+});
+
+export type GrantTrialInput = z.infer<typeof grantTrialSchema>;
+
 // ── Library Query Schema (for GET /libraries) ────────────────────────────────
 export const libraryQuerySchema = z.object({
   page: z.string().optional().default('1'),
   limit: z.string().optional().default('20'),
   search: z.string().optional(),
   status: z
-    .enum(['active', 'suspended', 'deleted', 'paid', 'unpaid', 'expiring_soon', 'expired', 'all'])
+    .enum(['active', 'suspended', 'deleted', 'paid', 'unpaid', 'trial', 'expiring_soon', 'expired', 'all'])
     .optional()
     .default('all'),
   sort: z.string().optional().default('createdAt'),

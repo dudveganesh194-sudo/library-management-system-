@@ -24,6 +24,7 @@ export const LIBRARY_PAYMENT_STATUS = {
   PAID: 'paid',
   UNPAID: 'unpaid',
   PENDING: 'pending',
+  TRIAL: 'trial',
 } as const;
 
 export type LibraryPaymentStatus = (typeof LIBRARY_PAYMENT_STATUS)[keyof typeof LIBRARY_PAYMENT_STATUS];

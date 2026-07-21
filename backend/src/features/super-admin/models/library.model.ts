@@ -21,6 +21,8 @@ export interface ILibrary extends Document {
   pinCode: string;
   subscription?: Types.ObjectId;  // ref → Subscription
   paymentStatus: LibraryPaymentStatus;
+  isTrial?: boolean;
+  trialEndDate?: Date;
   subscriptionStartDate?: Date;
   subscriptionEndDate?: Date;
   seatsLimit: number;
@@ -86,6 +88,13 @@ const librarySchema = new Schema<ILibrary>(
       type: String,
       enum: Object.values(LIBRARY_PAYMENT_STATUS),
       default: LIBRARY_PAYMENT_STATUS.PAID,
+    },
+    isTrial: {
+      type: Boolean,
+      default: false,
+    },
+    trialEndDate: {
+      type: Date,
     },
     subscriptionStartDate: {
       type: Date,

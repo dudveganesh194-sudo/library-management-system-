@@ -24,7 +24,7 @@ const formSchema = z.object({
   state: z.string().min(2).optional(),
   pinCode: z.string().regex(/^\d{6}$/, 'Pin code must be 6 digits').optional(),
   subscriptionId: z.string().optional(),
-  paymentStatus: z.enum(['paid', 'unpaid', 'pending']).optional(),
+  paymentStatus: z.enum(['paid', 'unpaid', 'pending', 'trial']).optional(),
   subscriptionEndDate: z.string().optional(),
   seatsLimit: z.number().int().min(1).max(10000).optional(),
 });
@@ -65,7 +65,7 @@ export function EditLibraryModal({ open, onClose, library }: EditLibraryModalPro
         state: library.state,
         pinCode: library.pinCode,
         subscriptionId: typeof library.subscription === 'object' && library.subscription ? library.subscription._id : '',
-        paymentStatus: library.paymentStatus || 'paid',
+        paymentStatus: library.paymentStatus || (library.isTrial ? 'trial' : 'paid'),
         subscriptionEndDate: library.subscriptionEndDate ? library.subscriptionEndDate.split('T')[0] : '',
         seatsLimit: library.seatsLimit,
       });
@@ -142,7 +142,8 @@ export function EditLibraryModal({ open, onClose, library }: EditLibraryModalPro
             label="Payment Status"
             {...register('paymentStatus')}
             options={[
-              { label: 'Paid', value: 'paid' },
+              { label: 'Paid Plan', value: 'paid' },
+              { label: '🎁 Free Trial', value: 'trial' },
               { label: 'Unpaid', value: 'unpaid' },
               { label: 'Pending', value: 'pending' },
             ]}

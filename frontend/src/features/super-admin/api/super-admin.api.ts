@@ -31,7 +31,7 @@ export interface LibraryQueryParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: 'active' | 'suspended' | 'deleted' | 'paid' | 'unpaid' | 'expiring_soon' | 'expired' | 'all';
+  status?: 'active' | 'suspended' | 'deleted' | 'paid' | 'unpaid' | 'trial' | 'expiring_soon' | 'expired' | 'all';
   sort?: string;
   order?: 'asc' | 'desc';
 }
@@ -58,7 +58,9 @@ export interface CreateLibraryPayload {
   password: string;
   confirmPassword: string;
   subscriptionId?: string;
-  paymentStatus?: 'paid' | 'unpaid' | 'pending';
+  paymentStatus?: 'paid' | 'unpaid' | 'pending' | 'trial';
+  isTrial?: boolean;
+  trialDays?: number;
   subscriptionStartDate?: string;
   subscriptionEndDate?: string;
   seatsLimit: number;
@@ -79,7 +81,9 @@ export interface UpdateLibraryPayload {
   state?: string;
   pinCode?: string;
   subscriptionId?: string;
-  paymentStatus?: 'paid' | 'unpaid' | 'pending';
+  paymentStatus?: 'paid' | 'unpaid' | 'pending' | 'trial';
+  isTrial?: boolean;
+  trialDays?: number;
   subscriptionStartDate?: string;
   subscriptionEndDate?: string;
   seatsLimit?: number;
@@ -88,6 +92,11 @@ export interface UpdateLibraryPayload {
 
 export async function updateLibrary(id: string, payload: UpdateLibraryPayload): Promise<Library> {
   const { data } = await api.put<ApiResponse<Library>>(`${BASE}/libraries/${id}`, payload);
+  return data.data;
+}
+
+export async function grantTrial(id: string, trialDays: number): Promise<Library> {
+  const { data } = await api.post<ApiResponse<Library>>(`${BASE}/libraries/${id}/grant-trial`, { trialDays });
   return data.data;
 }
 

@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, PauseCircle, PlayCircle, Trash2, Library as LibraryIcon, CheckCircle2, XCircle, Clock, KeyRound } from 'lucide-react';
+import { Plus, Edit2, PauseCircle, PlayCircle, Trash2, Library as LibraryIcon, CheckCircle2, XCircle, Clock, KeyRound, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
@@ -20,6 +20,7 @@ import { DataTable, type Column } from '../components/DataTable';
 import { StatusBadge } from '../components/StatusBadge';
 import { CreateLibraryModal } from '../components/CreateLibraryModal';
 import { EditLibraryModal } from '../components/EditLibraryModal';
+import { GrantTrialModal } from '../components/GrantTrialModal';
 import { ResetOwnerPasswordModal } from '../components/ResetOwnerPasswordModal';
 import { LibraryCredentialsDialog } from '../components/LibraryCredentialsDialog';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -27,7 +28,7 @@ import { Button } from '../../../components/ui/Button';
 import { formatDate, daysRemaining } from '../../../lib/utils';
 import type { Library, CreateLibraryCredentials } from '../../../types';
 
-type FilterTab = 'all' | 'active' | 'paid' | 'unpaid' | 'expiring_soon' | 'expired' | 'suspended';
+type FilterTab = 'all' | 'active' | 'trial' | 'paid' | 'unpaid' | 'expiring_soon' | 'expired' | 'suspended';
 
 export function LibrariesPage() {
   const queryClient = useQueryClient();
@@ -40,6 +41,7 @@ export function LibrariesPage() {
   // Modals state
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editLibrary, setEditLibrary] = useState<Library | null>(null);
+  const [grantTrialLibrary, setGrantTrialLibrary] = useState<Library | null>(null);
   const [resetPasswordLibrary, setResetPasswordLibrary] = useState<Library | null>(null);
   const [credentials, setCredentials] = useState<CreateLibraryCredentials | null>(null);
 
@@ -144,7 +146,7 @@ export function LibrariesPage() {
         const sub = typeof lib.subscription === 'object' ? lib.subscription : null;
         return (
           <span className="text-xs font-semibold px-2 py-1 rounded-md bg-surface-2 border border-border">
-            {sub ? sub.name : 'None'}
+            {lib.isTrial || lib.paymentStatus === 'trial' ? 'Free Trial' : sub ? sub.name : 'None'}
           </span>
         );
       },
@@ -152,24 +154,31 @@ export function LibrariesPage() {
     {
       key: 'paymentStatus',
       label: 'Payment Status',
-      render: (lib) => (
-        <span
-          className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${
-            lib.paymentStatus === 'paid'
-              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-              : lib.paymentStatus === 'pending'
-              ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-              : 'bg-red-500/10 text-red-500 border-red-500/20'
-          }`}
-        >
-          {lib.paymentStatus === 'paid' ? (
-            <CheckCircle2 className="w-3.5 h-3.5" />
-          ) : (
-            <XCircle className="w-3.5 h-3.5" />
-          )}
-          {lib.paymentStatus ? lib.paymentStatus.toUpperCase() : 'PAID'}
-        </span>
-      ),
+      render: (lib) => {
+        const isTrial = lib.paymentStatus === 'trial' || lib.isTrial;
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${
+              isTrial
+                ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                : lib.paymentStatus === 'paid'
+                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                : lib.paymentStatus === 'pending'
+                ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                : 'bg-red-500/10 text-red-500 border-red-500/20'
+            }`}
+          >
+            {isTrial ? (
+              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+            ) : lib.paymentStatus === 'paid' ? (
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            ) : (
+              <XCircle className="w-3.5 h-3.5" />
+            )}
+            {isTrial ? 'FREE TRIAL' : lib.paymentStatus ? lib.paymentStatus.toUpperCase() : 'PAID'}
+          </span>
+        );
+      },
     },
     {
       key: 'subscriptionEndDate',
@@ -186,6 +195,8 @@ export function LibrariesPage() {
                   ? 'bg-red-500/10 text-red-500 border-red-500/20'
                   : days <= 7
                   ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                  : lib.isTrial || lib.paymentStatus === 'trial'
+                  ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
                   : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
               }`}
             >
@@ -206,6 +217,15 @@ export function LibrariesPage() {
       label: 'Actions',
       render: (lib) => (
         <div className="flex items-center gap-1">
+          {/* Grant / Extend Free Trial */}
+          <button
+            onClick={() => setGrantTrialLibrary(lib)}
+            className="p-1.5 rounded-lg text-purple-500 hover:bg-purple-500/10 transition-colors"
+            title="Grant / Extend Free Trial"
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
+
           {/* Edit */}
           <button
             onClick={() => setEditLibrary(lib)}
@@ -268,7 +288,7 @@ export function LibrariesPage() {
             Libraries Management
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Track onboarded libraries, paid/unpaid subscription statuses, and upcoming plan expiries.
+            Track onboarded libraries, free trial periods, paid/unpaid subscription statuses, and upcoming plan expiries.
           </p>
         </div>
         <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setCreateModalOpen(true)}>
@@ -281,6 +301,7 @@ export function LibrariesPage() {
         {[
           { id: 'all', label: 'All Onboarded' },
           { id: 'active', label: 'Active' },
+          { id: 'trial', label: '🎁 Free Trial' },
           { id: 'paid', label: 'Paid' },
           { id: 'unpaid', label: 'Unpaid / Pending' },
           { id: 'expiring_soon', label: 'Expiring Soon (<= 7d)' },
@@ -333,6 +354,12 @@ export function LibrariesPage() {
         open={!!editLibrary}
         onClose={() => setEditLibrary(null)}
         library={editLibrary}
+      />
+
+      <GrantTrialModal
+        open={!!grantTrialLibrary}
+        onClose={() => setGrantTrialLibrary(null)}
+        library={grantTrialLibrary}
       />
 
       <ResetOwnerPasswordModal

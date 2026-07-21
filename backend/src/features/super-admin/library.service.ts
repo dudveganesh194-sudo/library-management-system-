@@ -91,14 +91,18 @@ export async function createLibrary(
   }
 
   // Calculate subscription dates
+  const isTrialSelected = data.paymentStatus === 'trial' || data.isTrial === true;
+  const trialDurationDays = data.trialDays || 15;
+  const effectiveDurationDays = isTrialSelected ? trialDurationDays : planDurationDays;
+
   const startDate = data.subscriptionStartDate
     ? new Date(data.subscriptionStartDate)
     : new Date();
   const endDate = data.subscriptionEndDate
     ? new Date(data.subscriptionEndDate)
-    : new Date(startDate.getTime() + planDurationDays * 24 * 60 * 60 * 1000);
+    : new Date(startDate.getTime() + effectiveDurationDays * 24 * 60 * 60 * 1000);
 
-  const paymentStatus = data.paymentStatus || LIBRARY_PAYMENT_STATUS.PAID;
+  const paymentStatus = isTrialSelected ? LIBRARY_PAYMENT_STATUS.TRIAL : (data.paymentStatus || LIBRARY_PAYMENT_STATUS.PAID);
 
   // Safe admin ObjectId
   const validAdminId = mongoose.Types.ObjectId.isValid(superAdminId)
@@ -158,6 +162,8 @@ export async function createLibrary(
           pinCode: data.pinCode,
           subscription: validSubId,
           paymentStatus,
+          isTrial: isTrialSelected,
+          trialEndDate: isTrialSelected ? endDate : undefined,
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
           seatsLimit: data.seatsLimit,
@@ -316,6 +322,11 @@ export async function getAllLibraries(
       filter.paymentStatus = LIBRARY_PAYMENT_STATUS.PAID;
     } else if (query.status === 'unpaid') {
       filter.paymentStatus = { $in: [LIBRARY_PAYMENT_STATUS.UNPAID, LIBRARY_PAYMENT_STATUS.PENDING] };
+    } else if (query.status === 'trial') {
+      filter.$or = [
+        { paymentStatus: LIBRARY_PAYMENT_STATUS.TRIAL },
+        { isTrial: true },
+      ];
     } else if (query.status === 'expiring_soon') {
       filter.subscriptionEndDate = { $gte: now, $lte: sevenDaysFromNow };
     } else if (query.status === 'expired') {
@@ -325,11 +336,17 @@ export async function getAllLibraries(
 
   // Search across name, email, city
   if (query.search) {
-    filter.$or = [
+    const searchCondition = [
       { name: { $regex: query.search, $options: 'i' } },
       { email: { $regex: query.search, $options: 'i' } },
       { city: { $regex: query.search, $options: 'i' } },
     ];
+    if (filter.$or) {
+      filter.$and = [{ $or: filter.$or }, { $or: searchCondition }];
+      delete filter.$or;
+    } else {
+      filter.$or = searchCondition;
+    }
   }
 
   // Sort
@@ -388,8 +405,23 @@ export async function updateLibrary(
   if (data.pinCode) update.pinCode = data.pinCode;
   if (data.subscriptionId) update.subscription = data.subscriptionId;
   if (data.paymentStatus) update.paymentStatus = data.paymentStatus;
+  if (data.isTrial !== undefined) update.isTrial = data.isTrial;
   if (data.subscriptionStartDate) update.subscriptionStartDate = new Date(data.subscriptionStartDate);
   if (data.subscriptionEndDate) update.subscriptionEndDate = new Date(data.subscriptionEndDate);
+
+  // If set to trial or trialDays provided
+  if (data.paymentStatus === 'trial' || data.isTrial === true) {
+    update.isTrial = true;
+    update.paymentStatus = LIBRARY_PAYMENT_STATUS.TRIAL;
+    if (data.trialDays) {
+      const startDate = data.subscriptionStartDate ? new Date(data.subscriptionStartDate) : new Date();
+      const endDate = new Date(startDate.getTime() + data.trialDays * 24 * 60 * 60 * 1000);
+      update.subscriptionStartDate = startDate;
+      update.subscriptionEndDate = endDate;
+      update.trialEndDate = endDate;
+    }
+  }
+
   if (data.seatsLimit) update.seatsLimit = data.seatsLimit;
   if (data.status) update.status = data.status;
 
@@ -404,6 +436,9 @@ export async function updateLibrary(
 
   // If payment status changed to 'paid', record a payment record for revenue tracking
   if (data.paymentStatus === LIBRARY_PAYMENT_STATUS.PAID && library.paymentStatus !== LIBRARY_PAYMENT_STATUS.PAID) {
+    // If was on trial and now paid, clear isTrial flag
+    await Library.findByIdAndUpdate(id, { isTrial: false });
+
     const subObj = updated.subscription as any;
     const amount = subObj?.price || 1000;
     const invoiceNumber = `INV-LIB-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
@@ -438,6 +473,67 @@ export async function updateLibrary(
     ipAddress,
   }).catch((err) => logger.error('Failed to log audit action:', err));
 
+  return updated;
+}
+
+// ── Grant / Extend Free Trial ────────────────────────────────────────────────
+
+export async function grantTrial(
+  id: string,
+  trialDays: number,
+  superAdminId: string,
+  ipAddress?: string
+): Promise<ILibrary> {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new NotFoundError('Library');
+  }
+
+  const library = await Library.findById(id);
+  if (!library) throw new NotFoundError('Library');
+
+  const startDate = new Date();
+  const endDate = new Date(startDate.getTime() + trialDays * 24 * 60 * 60 * 1000);
+
+  const updated = await Library.findByIdAndUpdate(
+    id,
+    {
+      isTrial: true,
+      paymentStatus: LIBRARY_PAYMENT_STATUS.TRIAL,
+      subscriptionStartDate: startDate,
+      subscriptionEndDate: endDate,
+      trialEndDate: endDate,
+      status: LIBRARY_STATUS.ACTIVE,
+    },
+    { new: true, runValidators: true }
+  )
+    .populate('owner', 'name email phone isActive')
+    .populate('subscription', 'name price duration maxSeats');
+
+  if (!updated) throw new NotFoundError('Library');
+
+  // Reactivate owner user and library staff if suspended
+  const userFilters: any[] = [];
+  if (library.owner && mongoose.Types.ObjectId.isValid(String(library.owner))) {
+    userFilters.push({ _id: library.owner });
+  }
+  if (library._id) {
+    userFilters.push({ libraryId: library._id });
+  }
+  if (userFilters.length > 0) {
+    await User.updateMany({ $or: userFilters }, { isActive: true }).catch(() => {});
+  }
+
+  await logAction({
+    action: 'library.trial_granted',
+    performedBy: superAdminId,
+    targetType: 'library',
+    targetId: id,
+    details: `Granted ${trialDays} days free trial to library "${updated.name}" (Expires: ${endDate.toISOString().split('T')[0]})`,
+    metadata: { trialDays, trialEndDate: endDate },
+    ipAddress,
+  }).catch((err) => logger.error('Failed to log audit action:', err));
+
+  logger.info(`🎁 Free Trial (${trialDays} days) granted to library "${updated.name}"`);
   return updated;
 }
 

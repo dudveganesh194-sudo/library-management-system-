@@ -17,6 +17,8 @@ import { Button } from '../../../components/ui/Button';
 import { createLibrary, getSubscriptions } from '../api/super-admin.api';
 import type { CreateLibraryCredentials } from '../../../types';
 
+import { Gift, Sparkles } from 'lucide-react';
+
 const formSchema = z.object({
   libraryName: z.string().min(2, 'Library name must be at least 2 characters').max(200),
   ownerName: z.string().min(2, 'Owner name must be at least 2 characters').max(100),
@@ -30,7 +32,8 @@ const formSchema = z.object({
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Must contain uppercase, lowercase, and number'),
   confirmPassword: z.string(),
   subscriptionId: z.string().optional(),
-  paymentStatus: z.enum(['paid', 'unpaid', 'pending']),
+  paymentStatus: z.enum(['paid', 'unpaid', 'pending', 'trial']),
+  trialDays: z.number().int().min(1, 'At least 1 day').max(365).optional(),
   seatsLimit: z.number().int().min(1, 'At least 1 seat').max(10000),
   status: z.enum(['active', 'suspended']),
 }).refine((d) => d.password === d.confirmPassword, {
@@ -58,15 +61,20 @@ export function CreateLibraryModal({ open, onClose, onSuccess }: CreateLibraryMo
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema) as any,
     defaultValues: {
       seatsLimit: 50,
       paymentStatus: 'paid',
+      trialDays: 15,
       status: 'active',
     },
   });
+
+  const selectedPaymentStatus = watch('paymentStatus');
 
   const mutation = useMutation({
     mutationFn: createLibrary,
@@ -200,7 +208,8 @@ export function CreateLibraryModal({ open, onClose, onSuccess }: CreateLibraryMo
             {...register('paymentStatus')}
             error={errors.paymentStatus?.message}
             options={[
-              { label: 'Paid', value: 'paid' },
+              { label: 'Paid Plan', value: 'paid' },
+              { label: '🎁 Free Trial', value: 'trial' },
               { label: 'Unpaid', value: 'unpaid' },
               { label: 'Pending', value: 'pending' },
             ]}
@@ -223,6 +232,44 @@ export function CreateLibraryModal({ open, onClose, onSuccess }: CreateLibraryMo
             ]}
           />
         </div>
+
+        {/* Free Trial Options Box */}
+        {selectedPaymentStatus === 'trial' && (
+          <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 space-y-3 animate-fade-in">
+            <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4" /> Free Trial Duration Setup
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+              <Input
+                label="Trial Duration (in Days)"
+                type="number"
+                min={1}
+                max={365}
+                {...register('trialDays', { valueAsNumber: true })}
+                error={errors.trialDays?.message}
+                placeholder="15"
+              />
+              <div className="flex items-center gap-2 pb-0.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={watch('trialDays') === 15 ? 'primary' : 'secondary'}
+                  onClick={() => setValue('trialDays', 15)}
+                >
+                  15 Days Preset
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={watch('trialDays') === 30 ? 'primary' : 'secondary'}
+                  onClick={() => setValue('trialDays', 30)}
+                >
+                  30 Days Preset
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Submit */}
         <div className="flex justify-end gap-3 pt-4 border-t border-border">
