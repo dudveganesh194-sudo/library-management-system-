@@ -27,10 +27,16 @@ const ProfilePage = lazy(() => import('../features/super-admin/pages/ProfilePage
 
 function PageFallback() {
   return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="flex flex-col items-center space-y-3">
+    <div className="flex items-center justify-center min-h-[50vh] p-4">
+      <div className="flex flex-col items-center space-y-3 text-center">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-xs text-muted-foreground font-medium">Loading view...</p>
+        <button
+          onClick={() => { window.location.href = '/login'; }}
+          className="mt-1 px-3.5 py-1.5 bg-surface-2 hover:bg-surface-3 text-foreground border border-border rounded-xl text-xs font-semibold shadow-sm transition-all"
+        >
+          Go to Login Page
+        </button>
       </div>
     </div>
   );
