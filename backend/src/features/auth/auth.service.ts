@@ -42,12 +42,19 @@ export async function loginService(
     throw new UnauthorizedError('Invalid username/email or password');
   }
 
+  // Extract the raw ObjectId string from libraryId (handles both populated and unpopulated cases)
+  let libId: string | undefined;
+  if (user.libraryId) {
+    const rawLib = user.libraryId as any;
+    libId = rawLib._id ? String(rawLib._id) : String(rawLib);
+  }
+
   const payload: AuthUser = {
     id: String(user._id),
     email: user.email,
     role: user.role,
     name: user.name,
-    libraryId: user.libraryId ? String(user.libraryId) : undefined,
+    libraryId: libId,
   };
 
   const accessToken = generateAccessToken(payload);
@@ -86,12 +93,19 @@ export async function refreshTokenService(
     throw new UnauthorizedError('Token reuse detected. Please login again.');
   }
 
+  // Extract the raw ObjectId string from libraryId (handles both populated and unpopulated cases)
+  let libId: string | undefined;
+  if (user.libraryId) {
+    const rawLib = user.libraryId as any;
+    libId = rawLib._id ? String(rawLib._id) : String(rawLib);
+  }
+
   const payload: AuthUser = {
     id: String(user._id),
     email: user.email,
     role: user.role,
     name: user.name,
-    libraryId: user.libraryId ? String(user.libraryId) : undefined,
+    libraryId: libId,
   };
 
   const newAccessToken = generateAccessToken(payload);
