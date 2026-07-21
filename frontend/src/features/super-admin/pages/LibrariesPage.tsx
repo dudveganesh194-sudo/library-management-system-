@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, PauseCircle, PlayCircle, Trash2, Library as LibraryIcon, CheckCircle2, XCircle, Clock, KeyRound, Sparkles } from 'lucide-react';
+import { Plus, Edit2, PauseCircle, PlayCircle, Trash2, Library as LibraryIcon, CheckCircle2, XCircle, Clock, KeyRound, Sparkles, Phone, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
@@ -114,6 +114,14 @@ export function LibrariesPage() {
     }
   };
 
+  // Helper for WhatsApp link formatting
+  const getWhatsAppLink = (phoneStr: string, libraryName: string, ownerName: string) => {
+    const clean = phoneStr.replace(/\D/g, '');
+    const formattedPhone = clean.length === 10 ? `91${clean}` : clean;
+    const msg = `Hello ${ownerName || 'Library Owner'}, regarding your library "${libraryName}" on our platform:`;
+    return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`;
+  };
+
   // Table Columns
   const columns: Column<Library>[] = [
     {
@@ -128,13 +136,37 @@ export function LibrariesPage() {
     },
     {
       key: 'owner',
-      label: 'Owner',
+      label: 'Owner & Contact',
       render: (lib) => {
         const owner = typeof lib.owner === 'object' ? lib.owner : null;
+        const ownerName = owner?.name || 'Owner';
+        const phone = lib.phone || (owner as any)?.phone || '';
+
         return (
           <div>
-            <p className="font-medium text-foreground">{owner?.name || 'N/A'}</p>
+            <p className="font-medium text-foreground">{ownerName}</p>
             <p className="text-xs text-muted-foreground">{lib.email}</p>
+            {phone && (
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-xs font-mono text-muted-foreground">{phone}</span>
+                <a
+                  href={`tel:${phone}`}
+                  className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                  title={`Call ${ownerName} (${phone})`}
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href={getWhatsAppLink(phone, lib.name, ownerName)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 rounded-md bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20 transition-colors"
+                  title={`Send WhatsApp message to ${ownerName}`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            )}
           </div>
         );
       },
@@ -215,66 +247,96 @@ export function LibrariesPage() {
     {
       key: 'actions',
       label: 'Actions',
-      render: (lib) => (
-        <div className="flex items-center gap-1">
-          {/* Grant / Extend Free Trial */}
-          <button
-            onClick={() => setGrantTrialLibrary(lib)}
-            className="p-1.5 rounded-lg text-purple-500 hover:bg-purple-500/10 transition-colors"
-            title="Grant / Extend Free Trial"
-          >
-            <Sparkles className="w-4 h-4" />
-          </button>
+      render: (lib) => {
+        const owner = typeof lib.owner === 'object' ? lib.owner : null;
+        const ownerName = owner?.name || 'Owner';
+        const phone = lib.phone || (owner as any)?.phone || '';
 
-          {/* Edit */}
-          <button
-            onClick={() => setEditLibrary(lib)}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-surface-4 transition-colors"
-            title="Edit Library / Renewal"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
+        return (
+          <div className="flex items-center gap-1">
+            {/* Quick Call */}
+            {phone && (
+              <a
+                href={`tel:${phone}`}
+                className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-500/10 transition-colors"
+                title={`Call Owner (${phone})`}
+              >
+                <Phone className="w-4 h-4" />
+              </a>
+            )}
 
-          {/* Reset Owner Password */}
-          <button
-            onClick={() => setResetPasswordLibrary(lib)}
-            className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors"
-            title="Reset Owner Password"
-          >
-            <KeyRound className="w-4 h-4" />
-          </button>
+            {/* Quick WhatsApp Message */}
+            {phone && (
+              <a
+                href={getWhatsAppLink(phone, lib.name, ownerName)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 rounded-lg text-green-500 hover:bg-green-500/10 transition-colors"
+                title={`WhatsApp Message Owner (${phone})`}
+              >
+                <MessageSquare className="w-4 h-4" />
+              </a>
+            )}
 
-          {/* Suspend / Activate */}
-          {lib.status === 'active' ? (
+            {/* Grant / Extend Free Trial */}
             <button
-              onClick={() => setConfirmDialog({ open: true, type: 'suspend', library: lib })}
+              onClick={() => setGrantTrialLibrary(lib)}
+              className="p-1.5 rounded-lg text-purple-500 hover:bg-purple-500/10 transition-colors"
+              title="Grant / Extend Free Trial"
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+
+            {/* Edit */}
+            <button
+              onClick={() => setEditLibrary(lib)}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-surface-4 transition-colors"
+              title="Edit Library / Renewal"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+
+            {/* Reset Owner Password */}
+            <button
+              onClick={() => setResetPasswordLibrary(lib)}
               className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors"
-              title="Suspend Library"
+              title="Reset Owner Password"
             >
-              <PauseCircle className="w-4 h-4" />
+              <KeyRound className="w-4 h-4" />
             </button>
-          ) : lib.status === 'suspended' ? (
-            <button
-              onClick={() => setConfirmDialog({ open: true, type: 'activate', library: lib })}
-              className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-500/10 transition-colors"
-              title="Activate Library"
-            >
-              <PlayCircle className="w-4 h-4" />
-            </button>
-          ) : null}
 
-          {/* Delete */}
-          {lib.status !== 'deleted' && (
-            <button
-              onClick={() => setConfirmDialog({ open: true, type: 'delete', library: lib })}
-              className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
-              title="Delete Library"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      ),
+            {/* Suspend / Activate */}
+            {lib.status === 'active' ? (
+              <button
+                onClick={() => setConfirmDialog({ open: true, type: 'suspend', library: lib })}
+                className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors"
+                title="Suspend Library"
+              >
+                <PauseCircle className="w-4 h-4" />
+              </button>
+            ) : lib.status === 'suspended' ? (
+              <button
+                onClick={() => setConfirmDialog({ open: true, type: 'activate', library: lib })}
+                className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-500/10 transition-colors"
+                title="Activate Library"
+              >
+                <PlayCircle className="w-4 h-4" />
+              </button>
+            ) : null}
+
+            {/* Delete */}
+            {lib.status !== 'deleted' && (
+              <button
+                onClick={() => setConfirmDialog({ open: true, type: 'delete', library: lib })}
+                className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+                title="Delete Library"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 

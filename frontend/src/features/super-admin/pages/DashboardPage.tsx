@@ -16,6 +16,8 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
+  Phone,
+  MessageSquare,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboard } from '../api/super-admin.api';
@@ -31,6 +33,13 @@ export function DashboardPage() {
     queryFn: getDashboard,
     refetchInterval: 30000,
   });
+
+  const getWhatsAppLink = (phoneStr: string, libraryName: string) => {
+    const clean = phoneStr.replace(/\D/g, '');
+    const formattedPhone = clean.length === 10 ? `91${clean}` : clean;
+    const msg = `Hello, regarding your library "${libraryName}" on our platform:`;
+    return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`;
+  };
 
   if (isLoading || !stats) {
     return (
@@ -179,9 +188,31 @@ export function DashboardPage() {
                         <span className="font-semibold text-sm text-foreground">{lib.name}</span>
                         <span className="text-xs text-muted-foreground">({lib.email})</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Plan: <strong className="text-foreground">{lib.subscriptionName}</strong> · Phone: {lib.phone}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                        <span>Plan: <strong className="text-foreground">{lib.subscriptionName}</strong></span>
+                        {lib.phone && (
+                          <>
+                            <span>·</span>
+                            <span>{lib.phone}</span>
+                            <a
+                              href={`tel:${lib.phone}`}
+                              className="p-0.5 text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-0.5"
+                              title={`Call ${lib.phone}`}
+                            >
+                              <Phone className="w-3 h-3" />
+                            </a>
+                            <a
+                              href={getWhatsAppLink(lib.phone, lib.name)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-0.5 text-green-600 dark:text-green-400 hover:underline inline-flex items-center gap-0.5"
+                              title={`WhatsApp ${lib.phone}`}
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                            </a>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
