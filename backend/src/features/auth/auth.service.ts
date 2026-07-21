@@ -31,7 +31,7 @@ export async function loginService(
       { phone: cleanId },
     ],
     isActive: true,
-  }).select('+password +refreshTokens');
+  }).populate('libraryId').select('+password +refreshTokens');
 
   if (!user) {
     throw new UnauthorizedError('Invalid username/email or password');

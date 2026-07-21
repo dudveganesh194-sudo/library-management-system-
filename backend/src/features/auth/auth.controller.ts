@@ -34,7 +34,7 @@ export async function logout(req: AuthRequest, res: Response): Promise<void> {
 }
 
 export async function getMe(req: AuthRequest, res: Response): Promise<void> {
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.user.id).populate('libraryId');
   if (!user) throw new NotFoundError('User');
   successResponse(res, user.toSafeObject());
 }

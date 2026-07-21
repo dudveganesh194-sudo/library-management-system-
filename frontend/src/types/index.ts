@@ -11,7 +11,7 @@ export interface User {
   role: Role;
   avatar?: string;
   phone?: string;
-  libraryId?: string;
+  libraryId?: Library | string;
   isActive: boolean;
   lastLogin?: string;
   createdAt: string;
