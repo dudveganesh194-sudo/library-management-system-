@@ -2,6 +2,7 @@
  * Seat service — manage library seats and assignments (Multi-tenant scoped by libraryId).
  */
 
+import mongoose from 'mongoose';
 import { Seat, ISeat } from './seat.model';
 import { Student } from '../students/student.model';
 import { Payment } from '../payments/payment.model';
@@ -40,7 +41,10 @@ function buildBulkSeatNumbers(input: BulkSeatInput): string[] {
  * successful skips.
  */
 export async function bulkCreateSeats(input: BulkSeatInput, libraryId?: string, userId?: string): Promise<BulkSeatResult> {
-  const targetLibId = input.libraryId || libraryId;
+  const rawLibId = input.libraryId || libraryId;
+  const targetLibId = rawLibId && mongoose.Types.ObjectId.isValid(String(rawLibId)) ? String(rawLibId) : undefined;
+  const targetUserId = userId && mongoose.Types.ObjectId.isValid(String(userId)) ? String(userId) : undefined;
+
   const seatNumbers = buildBulkSeatNumbers(input);
   const filter: Record<string, unknown> = { seatNumber: { $in: seatNumbers } };
   if (targetLibId) filter.libraryId = targetLibId;
@@ -61,7 +65,7 @@ export async function bulkCreateSeats(input: BulkSeatInput, libraryId?: string, 
         insertOne: {
           document: {
             ...(targetLibId && { libraryId: targetLibId }),
-            ...(userId && { createdBy: userId }),
+            ...(targetUserId && { createdBy: targetUserId }),
             seatNumber,
             floor: input.floor,
             section: input.section,
@@ -105,11 +109,11 @@ export async function getAllSeats(query: {
   libraryId?: string;
 }): Promise<ISeat[]> {
   const filter: Record<string, unknown> = {};
-  if (query.libraryId) filter.libraryId = query.libraryId;
+  if (query.libraryId && mongoose.Types.ObjectId.isValid(query.libraryId)) filter.libraryId = query.libraryId;
   if (query.status) filter.status = query.status;
   if (query.floor) filter.floor = parseInt(query.floor, 10);
   if (query.section) filter.section = query.section.toUpperCase();
-  if (query.createdBy) filter.createdBy = query.createdBy;
+  if (query.createdBy && mongoose.Types.ObjectId.isValid(query.createdBy)) filter.createdBy = query.createdBy;
 
   const seats = await Seat.find(filter)
     .populate('currentStudent', 'name studentId phone plan')
@@ -123,7 +127,7 @@ export async function getAllSeats(query: {
 
   if (occupiedStudentIds.length > 0) {
     const paymentFilter: Record<string, unknown> = { student: { $in: occupiedStudentIds } };
-    if (query.libraryId) paymentFilter.libraryId = query.libraryId;
+    if (query.libraryId && mongoose.Types.ObjectId.isValid(query.libraryId)) paymentFilter.libraryId = query.libraryId;
 
     const payments = await Payment.find(paymentFilter)
       .select('student amount createdAt')
@@ -153,7 +157,7 @@ export async function getAllSeats(query: {
 
 export async function getSeatById(id: string, libraryId?: string): Promise<ISeat> {
   const filter: Record<string, unknown> = { _id: id };
-  if (libraryId) filter.libraryId = libraryId;
+  if (libraryId && mongoose.Types.ObjectId.isValid(libraryId)) filter.libraryId = libraryId;
 
   const seat = await Seat.findOne(filter)
     .populate('currentStudent', 'name studentId phone plan')
@@ -164,8 +168,12 @@ export async function getSeatById(id: string, libraryId?: string): Promise<ISeat
 
 export async function createSeat(data: Partial<ISeat>, libraryId?: string, userId?: string): Promise<ISeat> {
   const seatNum = String(data.seatNumber).toUpperCase();
+  const rawLibId = data.libraryId || libraryId;
+  const targetLibId = rawLibId && mongoose.Types.ObjectId.isValid(String(rawLibId)) ? String(rawLibId) : undefined;
+  const targetUserId = userId && mongoose.Types.ObjectId.isValid(String(userId)) ? String(userId) : undefined;
+
   const filter: Record<string, unknown> = { seatNumber: seatNum };
-  if (libraryId) filter.libraryId = libraryId;
+  if (targetLibId) filter.libraryId = targetLibId;
 
   const existing = await Seat.findOne(filter);
   if (existing) throw new ConflictError(`Seat ${data.seatNumber} already exists in this library`);
@@ -173,8 +181,8 @@ export async function createSeat(data: Partial<ISeat>, libraryId?: string, userI
   const seatData = {
     ...data,
     seatNumber: seatNum,
-    ...(libraryId && { libraryId: libraryId as any }),
-    ...(userId && { createdBy: userId as any }),
+    ...(targetLibId && { libraryId: targetLibId as any }),
+    ...(targetUserId && { createdBy: targetUserId as any }),
   };
 
   const seat = new Seat(seatData);
