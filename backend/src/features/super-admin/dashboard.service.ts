@@ -18,6 +18,7 @@ export interface DashboardStats {
     deleted: number;
     paid: number;
     unpaid: number;
+    trial: number;
     expiringSoon: number;
     expired: number;
   };
@@ -75,6 +76,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     deletedLibraries,
     paidLibraries,
     unpaidLibraries,
+    trialLibraries,
     expiringSoonLibraries,
     expiredLibraries,
     attentionLibrariesDocs,
@@ -95,6 +97,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     Library.countDocuments({ status: LIBRARY_STATUS.DELETED }),
     Library.countDocuments({ paymentStatus: LIBRARY_PAYMENT_STATUS.PAID, status: { $ne: LIBRARY_STATUS.DELETED } }),
     Library.countDocuments({ paymentStatus: { $in: [LIBRARY_PAYMENT_STATUS.UNPAID, LIBRARY_PAYMENT_STATUS.PENDING] }, status: { $ne: LIBRARY_STATUS.DELETED } }),
+    Library.countDocuments({ $or: [{ paymentStatus: LIBRARY_PAYMENT_STATUS.TRIAL }, { isTrial: true }], status: { $ne: LIBRARY_STATUS.DELETED } }),
     Library.countDocuments({ subscriptionEndDate: { $gte: now, $lte: sevenDaysFromNow }, status: { $ne: LIBRARY_STATUS.DELETED } }),
     Library.countDocuments({ subscriptionEndDate: { $lt: now }, status: { $ne: LIBRARY_STATUS.DELETED } }),
     Library.find({
@@ -149,6 +152,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       deleted: deletedLibraries,
       paid: paidLibraries,
       unpaid: unpaidLibraries,
+      trial: trialLibraries,
       expiringSoon: expiringSoonLibraries,
       expired: expiredLibraries,
     },

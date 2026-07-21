@@ -15,6 +15,7 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Sparkles,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboard } from '../api/super-admin.api';
@@ -47,15 +48,32 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <ShieldCheck className="w-6 h-6 text-amber-500" />
-          Super Admin Dashboard
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Platform-wide overview across all libraries, onboarding status, and subscription billing.
-        </p>
+      {/* Header & Quick Trial Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <ShieldCheck className="w-6 h-6 text-amber-500" />
+            Super Admin Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Platform-wide overview across all libraries, onboarding status, and subscription billing.
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate('/super-admin/libraries')}
+          className="flex items-center gap-3 p-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/25 transition-all text-left group"
+        >
+          <div className="p-2 rounded-lg bg-purple-500 text-white shadow-sm">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-purple-600 dark:text-purple-400 group-hover:underline">
+              Free Trial Libraries ({stats.libraries.trial || 0})
+            </p>
+            <p className="text-2xs text-muted-foreground">Click to manage & grant trials</p>
+          </div>
+        </button>
       </div>
 
       {/* Row 1: Core Stat Cards */}
@@ -65,14 +83,14 @@ export function DashboardPage() {
           value={stats.libraries.total}
           icon={Library}
           iconColor="text-amber-500"
-          subtitle={`${stats.libraries.active} Active · ${stats.libraries.suspended} Suspended`}
+          subtitle={`${stats.libraries.active} Active · ${stats.libraries.trial || 0} Free Trial`}
         />
         <StatCard
           title="Subscription Payment"
           value={`${stats.libraries.paid} Paid`}
           icon={CheckCircle2}
           iconColor="text-emerald-500"
-          subtitle={`${stats.libraries.unpaid} Unpaid / Pending`}
+          subtitle={`${stats.libraries.trial || 0} Free Trial · ${stats.libraries.unpaid} Unpaid`}
         />
         <StatCard
           title="Expiring / Expired"

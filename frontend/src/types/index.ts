@@ -199,6 +199,7 @@ export interface SuperAdminDashboardStats {
     deleted: number;
     paid: number;
     unpaid: number;
+    trial: number;
     expiringSoon: number;
     expired: number;
   };
