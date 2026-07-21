@@ -62,3 +62,26 @@ export const uploadStudentFiles = upload.fields([
 
 /** Upload library logo */
 export const uploadLogo = upload.single('logo');
+
+/** Memory storage multer handler for Excel/CSV import files */
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+      'application/csv',
+    ];
+    const ext = file.originalname.split('.').pop()?.toLowerCase();
+    if (allowed.includes(file.mimetype) || ['xlsx', 'xls', 'csv'].includes(ext || '')) {
+      cb(null, true);
+    } else {
+      cb(new AppError('Invalid file format. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.', 400));
+    }
+  },
+});
+
+export const uploadImportFile = importUpload.single('file');
+

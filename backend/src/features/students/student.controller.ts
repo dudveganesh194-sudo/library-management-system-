@@ -17,6 +17,8 @@ import {
   deleteStudent,
   getStudentPayments,
 } from './student.service';
+import { importStudentsFromFile, generateStudentTemplate } from './student-import.service';
+import { AppError } from '../../middleware/error.middleware';
 
 export async function listStudents(req: AuthRequest, res: Response): Promise<void> {
   const libId = req.user.role === 'super_admin' ? (req.query.libraryId as string) : req.libraryId;
@@ -54,4 +56,24 @@ export async function studentPayments(req: AuthRequest, res: Response): Promise<
   const libId = req.user.role === 'super_admin' ? undefined : req.libraryId;
   const payments = await getStudentPayments(req.params.id, libId);
   successResponse(res, payments, 'Student payments fetched');
+}
+
+export async function importStudents(req: AuthRequest, res: Response): Promise<void> {
+  const file = req.file;
+  if (!file) {
+    throw new AppError('No file uploaded. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.', 400);
+  }
+
+  const libId = req.user.role === 'super_admin' ? (req.body.libraryId || req.libraryId) : req.libraryId;
+  const result = await importStudentsFromFile(file.buffer, file.originalname, libId, req.user.id);
+
+  const message = `Import complete: ${result.created} created, ${result.skipped} skipped out of ${result.totalRows} rows`;
+  successResponse(res, result, message, result.created > 0 ? 201 : 200);
+}
+
+export async function downloadTemplate(_req: AuthRequest, res: Response): Promise<void> {
+  const buffer = generateStudentTemplate();
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename=student_import_template.xlsx');
+  res.send(buffer);
 }

@@ -5,7 +5,7 @@
 import { Router } from 'express';
 import { authenticate, authorize, requireTenant } from '../../middleware/auth.middleware';
 import { validate } from '../../middleware/validate.middleware';
-import { uploadStudentFiles } from '../../middleware/upload.middleware';
+import { uploadStudentFiles, uploadImportFile } from '../../middleware/upload.middleware';
 import { ROLES } from '../../shared/constants';
 import {
   listStudents,
@@ -14,6 +14,8 @@ import {
   editStudent,
   removeStudent,
   studentPayments,
+  importStudents,
+  downloadTemplate,
 } from './student.controller';
 import { createStudentSchema, updateStudentSchema } from './student.validation';
 
@@ -24,6 +26,8 @@ router.use(authenticate as any);
 router.use(requireTenant as any);
 
 router.get('/', listStudents as any);
+router.get('/template', downloadTemplate as any);
+router.post('/import', uploadImportFile as any, importStudents as any);
 router.post('/', uploadStudentFiles, validate(createStudentSchema, 'body'), addStudent as any);
 router.get('/:id', getStudent as any);
 router.put('/:id', uploadStudentFiles, validate(updateStudentSchema, 'body'), editStudent as any);
@@ -31,3 +35,4 @@ router.delete('/:id', authorize(ROLES.OWNER, ROLES.MANAGER) as any, removeStuden
 router.get('/:id/payments', studentPayments as any);
 
 export default router;
+

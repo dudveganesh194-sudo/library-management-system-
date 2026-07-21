@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Eye, Pencil, Trash2, UserCheck, Clock, AlertTriangle, Filter, PhoneCall, MessageCircle, CreditCard } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, UserCheck, Clock, AlertTriangle, Filter, PhoneCall, MessageCircle, CreditCard, FileSpreadsheet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/axios';
 import { Student } from '../../types';
@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { StudentStatusBadge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { StudentForm } from './StudentForm';
+import { StudentImportModal } from './StudentImportModal';
 import { PaymentForm } from '../payments/PaymentForm';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/auth.context';
@@ -29,6 +30,7 @@ export function StudentsPage() {
   const [page, setPage] = useState(1);
   const [filterExpiry, setFilterExpiry] = useState<'all' | '7days' | 'expired'>('all');
   const [modalOpen, setModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [editStudent, setEditStudent] = useState<Student | null>(null);
   const [paymentStudent, setPaymentStudent] = useState<Student | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -109,9 +111,18 @@ export function StudentsPage() {
             {meta?.total || 0} total registered students
           </p>
         </div>
-        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => { setEditStudent(null); setModalOpen(true); }}>
-          Add Student
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            leftIcon={<FileSpreadsheet className="w-4 h-4" />}
+            onClick={() => setImportModalOpen(true)}
+          >
+            Import Excel / CSV
+          </Button>
+          <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => { setEditStudent(null); setModalOpen(true); }}>
+            Add Student
+          </Button>
+        </div>
       </div>
 
       {/* Plan Expiry Stat Cards */}
@@ -389,6 +400,17 @@ export function StudentsPage() {
             queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
           }}
           onCancel={() => setModalOpen(false)}
+        />
+      </Modal>
+
+      {/* Bulk Import Modal */}
+      <Modal open={importModalOpen} onClose={() => setImportModalOpen(false)} title="Import Students from Excel / CSV" size="lg">
+        <StudentImportModal
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+          }}
+          onCancel={() => setImportModalOpen(false)}
         />
       </Modal>
 
