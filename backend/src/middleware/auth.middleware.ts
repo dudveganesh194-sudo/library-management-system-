@@ -8,7 +8,8 @@ import mongoose from 'mongoose';
 import { env } from '../config/env';
 import { AuthRequest, AuthUser } from '../shared/types';
 import { UnauthorizedError, ForbiddenError } from './error.middleware';
-import { Role, ROLES } from '../shared/constants';
+import { Role, ROLES, LIBRARY_STATUS } from '../shared/constants';
+import { Library } from '../features/super-admin/models/library.model';
 
 /**
  * Verifies the JWT access token from the Authorization header.
@@ -37,15 +38,26 @@ export function authenticate(req: AuthRequest, _res: Response, next: NextFunctio
 
 /**
  * Ensures that a tenant libraryId is present for library-level operations.
+ * Also checks if the target library account has been suspended by super admin.
  * Super admins can explicitly target a library via query/body or operate cross-tenant.
  */
-export function requireTenant(req: AuthRequest, _res: Response, next: NextFunction): void {
+export async function requireTenant(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
   if (!req.user) {
     throw new UnauthorizedError();
   }
 
-  if (req.user.role !== ROLES.SUPER_ADMIN && !req.libraryId) {
-    throw new ForbiddenError('Tenant context missing: user is not assigned to a library');
+  if (req.user.role !== ROLES.SUPER_ADMIN) {
+    if (!req.libraryId) {
+      throw new ForbiddenError('Tenant context missing: user is not assigned to a library');
+    }
+
+    const library = await Library.findById(req.libraryId).select('status');
+    if (!library || library.status === LIBRARY_STATUS.SUSPENDED) {
+      throw new ForbiddenError('Your library account has been suspended. Please contact customer support.');
+    }
+    if (library.status === LIBRARY_STATUS.DELETED) {
+      throw new ForbiddenError('Your library account has been deleted.');
+    }
   }
 
   next();

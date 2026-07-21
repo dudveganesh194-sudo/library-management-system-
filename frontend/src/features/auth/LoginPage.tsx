@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BookOpen, Eye, EyeOff, Loader2, Lock, User as UserIcon } from 'lucide-react';
+import { BookOpen, Eye, EyeOff, Loader2, Lock, User as UserIcon, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../store/auth.context';
 import toast from 'react-hot-toast';
 
@@ -19,7 +19,24 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
+  const [suspendedMsg, setSuspendedMsg] = useState<string | null>(null);
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem('suspended_message');
+    if (stored) {
+      setSuspendedMsg(stored);
+      sessionStorage.removeItem('suspended_message');
+    }
+
+    const handleSuspendedEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail) setSuspendedMsg(detail);
+    };
+
+    window.addEventListener('auth:suspended', handleSuspendedEvent);
+    return () => window.removeEventListener('auth:suspended', handleSuspendedEvent);
+  }, []);
 
   const {
     register,
@@ -28,6 +45,7 @@ export function LoginPage() {
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = async (data: LoginForm) => {
+    setSuspendedMsg(null);
     try {
       const user = await login(data.username, data.password);
       toast.success('Welcome back!');
@@ -37,7 +55,12 @@ export function LoginPage() {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         'Invalid credentials';
-      toast.error(msg);
+      
+      if (msg.toLowerCase().includes('suspended')) {
+        setSuspendedMsg(msg);
+      } else {
+        toast.error(msg);
+      }
     }
   };
 
@@ -59,6 +82,19 @@ export function LoginPage() {
             <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">Welcome back</h2>
             <p className="text-slate-500 text-base mt-1">Enter your credentials to continue</p>
           </div>
+
+          {/* Account Suspended Banner */}
+          {suspendedMsg && (
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm flex items-start gap-3 animate-fade-in shadow-sm">
+              <ShieldAlert className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Account Suspended</p>
+                <p className="text-xs text-red-600/90 dark:text-red-300/90 mt-0.5 leading-relaxed">
+                  {suspendedMsg}
+                </p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             {/* Username or Email */}

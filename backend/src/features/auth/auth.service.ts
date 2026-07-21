@@ -10,11 +10,13 @@ import {
 } from '../../middleware/auth.middleware';
 import {
   UnauthorizedError,
+  ForbiddenError,
   NotFoundError,
   AppError,
 } from '../../middleware/error.middleware';
 import { AuthUser } from '../../shared/types';
 import { logger } from '../../shared/helpers/logger';
+import { ROLES, LIBRARY_STATUS } from '../../shared/constants';
 
 export async function loginService(
   identifier: string,
@@ -30,7 +32,6 @@ export async function loginService(
       { name: { $regex: `^${escapedId}$`, $options: 'i' } },
       { phone: cleanId },
     ],
-    isActive: true,
   }).populate('libraryId').select('+password +refreshTokens');
 
   if (!user) {
@@ -40,6 +41,22 @@ export async function loginService(
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
     throw new UnauthorizedError('Invalid username/email or password');
+  }
+
+  // Check if non-super_admin user belongs to a suspended library
+  if (user.role !== ROLES.SUPER_ADMIN && user.libraryId) {
+    const rawLib = user.libraryId as any;
+    if (rawLib && (rawLib.status === LIBRARY_STATUS.SUSPENDED || rawLib.status === 'suspended')) {
+      throw new ForbiddenError('Your library account has been suspended. Please contact customer support.');
+    }
+  }
+
+  if (!user.isActive) {
+    // If user is inactive due to library suspension
+    if (user.libraryId && (user.libraryId as any).status === LIBRARY_STATUS.SUSPENDED) {
+      throw new ForbiddenError('Your library account has been suspended. Please contact customer support.');
+    }
+    throw new ForbiddenError('Your account is inactive. Please contact your library administrator.');
   }
 
   // Extract the raw ObjectId string from libraryId (handles both populated and unpopulated cases)
@@ -81,8 +98,20 @@ export async function refreshTokenService(
     throw new UnauthorizedError('Invalid or expired refresh token');
   }
 
-  const user = await User.findById(decoded.id).select('+refreshTokens');
-  if (!user || !user.isActive) {
+  const user = await User.findById(decoded.id).populate('libraryId').select('+refreshTokens');
+  if (!user) {
+    throw new UnauthorizedError('User not found');
+  }
+
+  // Check if non-super_admin user belongs to a suspended library
+  if (user.role !== ROLES.SUPER_ADMIN && user.libraryId) {
+    const rawLib = user.libraryId as any;
+    if (rawLib && (rawLib.status === LIBRARY_STATUS.SUSPENDED || rawLib.status === 'suspended')) {
+      throw new ForbiddenError('Your library account has been suspended. Please contact customer support.');
+    }
+  }
+
+  if (!user.isActive) {
     throw new UnauthorizedError('User not found or inactive');
   }
 

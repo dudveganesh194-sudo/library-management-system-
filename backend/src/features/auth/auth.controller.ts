@@ -12,7 +12,8 @@ import {
   changePasswordService,
 } from './auth.service';
 import { User } from '../users/user.model';
-import { NotFoundError } from '../../middleware/error.middleware';
+import { NotFoundError, ForbiddenError } from '../../middleware/error.middleware';
+import { ROLES, LIBRARY_STATUS } from '../../shared/constants';
 
 export async function login(req: AuthRequest, res: Response): Promise<void> {
   const { email, username, identifier, password } = req.body;
@@ -36,6 +37,14 @@ export async function logout(req: AuthRequest, res: Response): Promise<void> {
 export async function getMe(req: AuthRequest, res: Response): Promise<void> {
   const user = await User.findById(req.user.id).populate('libraryId');
   if (!user) throw new NotFoundError('User');
+
+  if (user.role !== ROLES.SUPER_ADMIN && user.libraryId) {
+    const rawLib = user.libraryId as any;
+    if (rawLib && (rawLib.status === LIBRARY_STATUS.SUSPENDED || rawLib.status === 'suspended')) {
+      throw new ForbiddenError('Your library account has been suspended. Please contact customer support.');
+    }
+  }
+
   successResponse(res, user.toSafeObject());
 }
 
