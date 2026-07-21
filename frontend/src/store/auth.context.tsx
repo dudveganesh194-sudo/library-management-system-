@@ -65,9 +65,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const { data } = await api.get('/auth/me');
-      dispatch({ type: 'SET_USER', payload: data.data });
-    } catch {
+      // 5-second timeout safeguard to prevent infinite hanging on slow mobile networks
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Session restore timeout')), 5000)
+      );
+
+      const { data } = (await Promise.race([
+        api.get('/auth/me'),
+        timeoutPromise,
+      ])) as any;
+
+      if (data?.data) {
+        dispatch({ type: 'SET_USER', payload: data.data });
+      } else {
+        throw new Error('Invalid user payload');
+      }
+    } catch (err) {
+      console.warn('[Auth] Session check failed or timed out:', err);
       queryClient.clear();
       dispatch({ type: 'LOGOUT' });
     }
@@ -76,11 +90,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // On mount: restore session from stored tokens
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
+    let isMounted = true;
+
     if (token) {
       refreshUser();
     } else {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
+
+    // Safety fallback: Ensure loading is ALWAYS unblocked within 6 seconds max
+    const maxTimer = setTimeout(() => {
+      if (isMounted) {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    }, 6000);
 
     // Listen for forced logout events (from axios interceptor)
     const handleForceLogout = () => {
@@ -88,7 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'LOGOUT' });
     };
     window.addEventListener('auth:logout', handleForceLogout);
-    return () => window.removeEventListener('auth:logout', handleForceLogout);
+    return () => {
+      isMounted = false;
+      clearTimeout(maxTimer);
+      window.removeEventListener('auth:logout', handleForceLogout);
+    };
   }, [refreshUser]);
 
   const login = async (username: string, password: string): Promise<User> => {

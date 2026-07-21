@@ -52,22 +52,44 @@ self.addEventListener('fetch', (event) => {
                        event.request.url.includes('/index.html');
 
   if (isNavigation) {
-    // Strategy: Network-First for HTML/Navigation to ensure latest index.html & JS bundle hashes
+    // Strategy: Network-First with 3s Timeout for HTML/Navigation
     event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          // Offline fallback
-          return caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || caches.match('/index.html');
+      new Promise((resolve, reject) => {
+        let timer = setTimeout(() => {
+          // If network fetch takes longer than 3 seconds, fall back to cached shell
+          caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+              resolve(cachedResponse);
+            } else {
+              caches.match('/index.html').then((indexCached) => {
+                if (indexCached) resolve(indexCached);
+              });
+            }
           });
-        })
+        }, 3000);
+
+        fetch(event.request)
+          .then((networkResponse) => {
+            clearTimeout(timer);
+            if (networkResponse && networkResponse.status === 200) {
+              const responseToCache = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+            }
+            resolve(networkResponse);
+          })
+          .catch((err) => {
+            clearTimeout(timer);
+            caches.match(event.request).then((cachedResponse) => {
+              if (cachedResponse) {
+                resolve(cachedResponse);
+              } else {
+                caches.match('/index.html').then((indexCached) => {
+                  resolve(indexCached || Promise.reject(err));
+                });
+              }
+            });
+          });
+      })
     );
     return;
   }

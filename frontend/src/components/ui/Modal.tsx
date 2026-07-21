@@ -51,15 +51,20 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border shrink-0 bg-card rounded-t-2xl">
-          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate pr-2">{title}</h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-surface-4 transition-colors shrink-0 touch-manipulation"
-            aria-label="Close modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className="flex flex-col border-b border-border shrink-0 bg-card rounded-t-2xl">
+          {/* Mobile Sheet Drag Indicator Bar */}
+          <div className="sm:hidden w-12 h-1 bg-border rounded-full mx-auto mt-2.5 mb-1" />
+
+          <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate pr-2">{title}</h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-surface-4 transition-colors shrink-0 touch-manipulation"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Content Body */}

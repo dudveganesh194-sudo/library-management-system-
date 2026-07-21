@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { SuperAdminSidebar } from './SuperAdminSidebar';
+import { MobileNav } from '../../../components/layout/MobileNav';
 import { Menu, ShieldCheck } from 'lucide-react';
 import { ThemeToggle } from '../../../components/layout/ThemeToggle';
 import { useSwipeGesture } from '../../../hooks/useSwipeGesture';
@@ -51,12 +52,15 @@ export function SuperAdminLayout() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-x-hidden">
+        <main className="flex-1 overflow-x-hidden pb-20 lg:pb-0">
           <div className="p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in">
             <Outlet />
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Dock Navigation */}
+      <MobileNav onOpenMenu={() => setMobileOpen(true)} isSuperAdmin={true} />
     </div>
   );
 }

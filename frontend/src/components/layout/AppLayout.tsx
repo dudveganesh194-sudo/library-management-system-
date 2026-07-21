@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
+import { MobileNav } from './MobileNav';
 import { ThemeToggle } from './ThemeToggle';
 import { Menu, BookOpen, Download, Sparkles } from 'lucide-react';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
@@ -13,7 +14,7 @@ import type { Library } from '../../types';
 
 /**
  * Main app layout — sidebar + top navigation bar + content area.
- * Supports swipe-right gesture to open sidebar on mobile.
+ * Supports swipe-right gesture to open sidebar on mobile and mobile bottom tab dock.
  */
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -115,12 +116,15 @@ export function AppLayout() {
         </header>
 
         {/* Content Outlet scroll area */}
-        <main className="flex-1 overflow-x-hidden">
+        <main className="flex-1 overflow-x-hidden pb-20 lg:pb-0">
           <div className="p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in">
             <Outlet />
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Dock Navigation */}
+      <MobileNav onOpenMenu={() => setMobileOpen(true)} />
     </div>
   );
 }
