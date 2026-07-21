@@ -4,6 +4,7 @@
 
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { env } from '../config/env';
 import { AuthRequest, AuthUser } from '../shared/types';
 import { UnauthorizedError, ForbiddenError } from './error.middleware';
@@ -25,7 +26,9 @@ export function authenticate(req: AuthRequest, _res: Response, next: NextFunctio
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as AuthUser;
     req.user = decoded;
-    req.libraryId = decoded.libraryId || undefined;
+    // Only accept libraryId that is a valid MongoDB ObjectId string
+    const libId = decoded.libraryId;
+    req.libraryId = (libId && mongoose.Types.ObjectId.isValid(libId)) ? libId : undefined;
     next();
   } catch {
     throw new UnauthorizedError('Invalid or expired token');
