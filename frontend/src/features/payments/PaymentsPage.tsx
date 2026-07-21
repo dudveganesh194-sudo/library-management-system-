@@ -22,7 +22,7 @@ export function PaymentsPage() {
   const [filterMethod, setFilterMethod] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['payments', page, filterStatus, filterMethod],
+    queryKey: ['payments', user?.libraryId || user?._id, page, filterStatus, filterMethod],
     queryFn: async () => {
       const { data } = await api.get('/payments', {
         params: { page, limit: 20, status: filterStatus || undefined, method: filterMethod || undefined },

@@ -33,7 +33,7 @@ export function SettingsPage() {
   const [planPrices, setPlanPrices] = useState<Record<string, number>>({});
 
   const { data: settings, isLoading } = useQuery<Settings>({
-    queryKey: ['settings'],
+    queryKey: ['settings', user?.libraryId || user?._id],
     queryFn: async () => { const { data } = await api.get('/settings'); return data.data; },
   });
 

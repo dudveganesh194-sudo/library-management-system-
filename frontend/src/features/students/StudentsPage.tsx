@@ -34,7 +34,7 @@ export function StudentsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['students', search, page],
+    queryKey: ['students', user?.libraryId || user?._id, search, page],
     queryFn: async () => {
       const { data } = await api.get('/students', { params: { search, page, limit: 20 } });
       return data;
@@ -42,7 +42,7 @@ export function StudentsPage() {
   });
 
   const { data: expiringList = [] } = useQuery<any[]>({
-    queryKey: ['expiring-plans-students-page'],
+    queryKey: ['expiring-plans-students-page', user?.libraryId || user?._id],
     queryFn: async () => {
       const { data } = await api.get('/reports/expiring?days=14');
       return data.data || [];

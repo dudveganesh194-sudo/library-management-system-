@@ -55,7 +55,7 @@ export function SeatsPage() {
   }, []);
 
   const { data: seats, isLoading: seatsLoading } = useQuery<Seat[]>({
-    queryKey: ['seats', filterStatus, filterFloor],
+    queryKey: ['seats', user?.libraryId || user?._id, filterStatus, filterFloor],
     queryFn: async () => {
       const { data } = await api.get('/seats', {
         params: { status: filterStatus || undefined, floor: filterFloor || undefined },
@@ -65,7 +65,7 @@ export function SeatsPage() {
   });
 
   const { data: floorList = [], isLoading: floorsLoading } = useQuery<any[]>({
-    queryKey: ['floors'],
+    queryKey: ['floors', user?.libraryId || user?._id],
     queryFn: async () => {
       const { data } = await api.get('/floors');
       return data.data || [];

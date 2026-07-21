@@ -43,7 +43,7 @@ export function UsersPage() {
   }
 
   const { data, isLoading } = useQuery({
-    queryKey: ['users', search],
+    queryKey: ['users', currentUser?.libraryId || currentUser?._id, search],
     queryFn: async () => { const { data } = await api.get('/users', { params: { search } }); return data; },
   });
 

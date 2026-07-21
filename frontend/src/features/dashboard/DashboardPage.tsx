@@ -42,13 +42,13 @@ export function DashboardPage() {
   const isReceptionist = user?.role === 'receptionist';
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ['dashboard-stats'],
+    queryKey: ['dashboard-stats', user?.libraryId || user?._id],
     queryFn: fetchDashboardStats,
     refetchInterval: 30000,
   });
 
   const { data: revenueTrend, isLoading: trendLoading } = useQuery({
-    queryKey: ['revenue-trend'],
+    queryKey: ['revenue-trend', user?.libraryId || user?._id],
     queryFn: fetchRevenueTrend,
     enabled: !isReceptionist,
   });

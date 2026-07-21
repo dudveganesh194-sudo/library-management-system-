@@ -5,10 +5,10 @@ import { AppRouter } from './router';
 
 import { ThemeProvider } from 'next-themes';
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000,
+      staleTime: 0,
       gcTime: 10 * 60_000,
       refetchOnWindowFocus: false,
       retry: 1,

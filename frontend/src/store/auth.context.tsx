@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useEffect, useReducer, useCallback } from 'react';
 import { User } from '../types';
 import { api } from '../lib/axios';
+import { queryClient } from '../App';
 
 interface AuthState {
   user: User | null;
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      queryClient.clear();
       dispatch({ type: 'LOGOUT' });
     }
   }, []);
@@ -66,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data } = await api.get('/auth/me');
       dispatch({ type: 'SET_USER', payload: data.data });
     } catch {
+      queryClient.clear();
       dispatch({ type: 'LOGOUT' });
     }
   }, []);
@@ -81,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for forced logout events (from axios interceptor)
     const handleForceLogout = () => {
+      queryClient.clear();
       dispatch({ type: 'LOGOUT' });
     };
     window.addEventListener('auth:logout', handleForceLogout);
@@ -88,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshUser]);
 
   const login = async (username: string, password: string): Promise<User> => {
+    queryClient.clear();
     const { data } = await api.post('/auth/login', { username, email: username, password });
     const { accessToken, refreshToken, user } = data.data;
 

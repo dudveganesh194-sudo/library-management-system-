@@ -3,30 +3,32 @@ import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, Clock, Grid3X3, QrCode, CreditCard, Banknote, Calendar, Layers, Users } from 'lucide-react';
 import { api } from '../../lib/axios';
 import { formatCurrency, formatDate, daysRemaining } from '../../lib/utils';
+import { useAuth } from '../../store/auth.context';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 
 export function ReportsPage() {
+  const { user } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'year' | 'allTime'>('month');
 
   const { data: trend } = useQuery({
-    queryKey: ['revenue-trend-6'],
+    queryKey: ['revenue-trend-6', user?.libraryId || user?._id],
     queryFn: async () => { const { data } = await api.get('/reports/revenue-trend?months=6'); return data.data; },
   });
 
   const { data: paymentStats } = useQuery({
-    queryKey: ['payment-method-stats'],
+    queryKey: ['payment-method-stats', user?.libraryId || user?._id],
     queryFn: async () => { const { data } = await api.get('/reports/payment-methods'); return data.data; },
   });
 
   const { data: expiring } = useQuery({
-    queryKey: ['expiring-14'],
+    queryKey: ['expiring-14', user?.libraryId || user?._id],
     queryFn: async () => { const { data } = await api.get('/reports/expiring?days=14'); return data.data; },
   });
 
   const { data: occupancy } = useQuery({
-    queryKey: ['occupancy'],
+    queryKey: ['occupancy', user?.libraryId || user?._id],
     queryFn: async () => { const { data } = await api.get('/reports/occupancy'); return data.data; },
   });
 
