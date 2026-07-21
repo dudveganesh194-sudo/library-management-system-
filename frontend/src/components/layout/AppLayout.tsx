@@ -67,7 +67,7 @@ export function AppLayout() {
             <div className="lg:hidden w-9 h-9 rounded-xl bg-gradient-brand flex items-center justify-center shrink-0 shadow-glow-sm">
               <BookOpen className="w-5 h-5 text-white" />
             </div>
-            <span className="lg:hidden text-base font-bold text-foreground leading-none">LibraryInfos</span>
+            <span className="lg:hidden text-base font-bold text-foreground leading-none">StudyLib</span>
           </div>
 
           {/* Action buttons: Free Trial Badge + PWA Install + Theme switcher */}
@@ -104,7 +104,7 @@ export function AppLayout() {
               <button
                 onClick={installApp}
                 className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-medium text-xs sm:text-sm shadow-md shadow-indigo-500/20 transition-all duration-200"
-                title="Install LibraryInfos App"
+                title="Install StudyLib App"
               >
                 <Download className="w-4 h-4 animate-bounce" />
                 <span>Install App</span>

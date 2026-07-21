@@ -33,7 +33,7 @@ export function RevenuePage() {
           ERP Subscription Revenue
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Revenue collected strictly from libraries for using the LibraryInfos platform (excluding student payments).
+          Revenue collected strictly from libraries for using the StudyLib platform (excluding student payments).
         </p>
       </div>
 

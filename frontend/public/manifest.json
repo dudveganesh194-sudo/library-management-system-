@@ -1,7 +1,7 @@
 {
-  "name": "LibraryInfos ERP",
-  "short_name": "LibraryInfos",
-  "description": "LibraryInfos — Manage your study library with ease. Students, seats, payments, and reports in one place.",
+  "name": "StudyLib ERP",
+  "short_name": "StudyLib",
+  "description": "StudyLib — Manage your study library with ease. Students, seats, payments, and reports in one place.",
   "start_url": "/",
   "id": "/",
   "display": "standalone",

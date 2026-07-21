@@ -37,7 +37,7 @@ export function SuperAdminLayout() {
             <div className="lg:hidden w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shrink-0 shadow-glow-sm">
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
-            <span className="lg:hidden text-base font-bold text-foreground leading-none">LibraryInfos</span>
+            <span className="lg:hidden text-base font-bold text-foreground leading-none">StudyLib</span>
           </div>
 
           {/* Theme toggle */}

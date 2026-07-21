@@ -1,9 +1,9 @@
 /**
- * LibraryInfos PWA Service Worker.
+ * StudyLib PWA Service Worker.
  * Enables offline caching and app installation capability with automatic cache-busting.
  */
 
-const CACHE_NAME = 'libraryinfos-v2';
+const CACHE_NAME = 'studylib-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

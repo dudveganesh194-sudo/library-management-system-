@@ -49,7 +49,7 @@ export function LoginPage() {
           <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-glow mb-4">
             <BookOpen className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">LibraryInfos</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">StudyLib</h1>
           <p className="text-slate-500 text-sm mt-1">Sign in to your account</p>
         </div>
 

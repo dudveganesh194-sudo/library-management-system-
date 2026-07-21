@@ -102,7 +102,7 @@ if (env.isDevelopment) {
 app.get('/', (_req, res) => {
   res.status(200).json({
     success: true,
-    message: '📚 LibraryInfos API is running',
+    message: '📚 StudyLib API is running',
     version: '1.0.0',
     docs: '/health',
   });

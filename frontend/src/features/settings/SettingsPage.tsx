@@ -217,7 +217,7 @@ export function SettingsPage() {
           <Eye className="w-4 h-4 text-brand-500" />
           <h2 className="section-title">Appearance</h2>
         </div>
-        <p className="text-sm text-muted-foreground mb-5">Select how LibraryInfos looks on your screen.</p>
+        <p className="text-sm text-muted-foreground mb-5">Select how StudyLib looks on your screen.</p>
         <div className="grid grid-cols-3 gap-4">
           {[
             { id: 'light', label: 'Light Mode', icon: Sun, color: 'text-amber-500', desc: 'Sleek light workspace' },

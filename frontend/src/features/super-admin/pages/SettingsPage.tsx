@@ -9,8 +9,8 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 
 export function SettingsPage() {
-  const [platformName, setPlatformName] = useState('Study Library ERP');
-  const [supportEmail, setSupportEmail] = useState('support@libraryinfos.com');
+  const [platformName, setPlatformName] = useState('StudyLib ERP');
+  const [supportEmail, setSupportEmail] = useState('support@studylib.com');
   const [allowRegistration, setAllowRegistration] = useState(true);
   const [saving, setSaving] = useState(false);
 
