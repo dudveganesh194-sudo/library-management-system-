@@ -39,7 +39,7 @@ export function PaymentForm({ studentId: initialStudentId, onSuccess, onCancel }
     queryKey: ['student-preload', initialStudentId],
     queryFn: async () => {
       const { data } = await api.get(`/students/${initialStudentId}`);
-      return data;
+      return data.data;
     },
     enabled: !!initialStudentId && !selectedStudent,
   });
@@ -75,8 +75,13 @@ export function PaymentForm({ studentId: initialStudentId, onSuccess, onCancel }
   useEffect(() => {
     if (selectedStudent) {
       setValue('studentId', selectedStudent._id);
-      // Auto-fill plan from student's current plan
-      if (selectedStudent.plan) setValue('plan', selectedStudent.plan);
+      // Auto-fill plan from student's current plan if valid
+      if (selectedStudent.plan) {
+        const validPlans = ['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom'];
+        if (validPlans.includes(selectedStudent.plan)) {
+          setValue('plan', selectedStudent.plan as any);
+        }
+      }
     }
   }, [selectedStudent, setValue]);
 
