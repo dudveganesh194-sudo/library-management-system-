@@ -19,6 +19,7 @@ const UsersPage = lazy(() => import('../features/users/UsersPage').then((m) => (
 import { SuperAdminLayout } from '../features/super-admin/layout/SuperAdminLayout';
 const SuperAdminDashboardPage = lazy(() => import('../features/super-admin/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const LibrariesPage = lazy(() => import('../features/super-admin/pages/LibrariesPage').then((m) => ({ default: m.LibrariesPage })));
+const LibraryDetailPage = lazy(() => import('../features/super-admin/pages/LibraryDetailPage').then((m) => ({ default: m.LibraryDetailPage })));
 const SubscriptionsPage = lazy(() => import('../features/super-admin/pages/SubscriptionsPage').then((m) => ({ default: m.SubscriptionsPage })));
 const RevenuePage = lazy(() => import('../features/super-admin/pages/RevenuePage').then((m) => ({ default: m.RevenuePage })));
 const SuperAdminSettingsPage = lazy(() => import('../features/super-admin/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
@@ -64,6 +65,7 @@ export function AppRouter() {
               <Route path="/super-admin" element={<Navigate to="/super-admin/dashboard" replace />} />
               <Route path="/super-admin/dashboard" element={<SuperAdminDashboardPage />} />
               <Route path="/super-admin/libraries" element={<LibrariesPage />} />
+              <Route path="/super-admin/libraries/:id" element={<LibraryDetailPage />} />
               <Route path="/super-admin/subscriptions" element={<SubscriptionsPage />} />
               <Route path="/super-admin/revenue" element={<RevenuePage />} />
               <Route path="/super-admin/settings" element={<SuperAdminSettingsPage />} />

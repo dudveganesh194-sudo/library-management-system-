@@ -20,7 +20,7 @@ import {
   MessageSquare,
   LogOut,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getDashboard } from '../api/super-admin.api';
 import { formatCurrency, formatDate, daysRemaining } from '../../../lib/utils';
 import { StatCard } from '../../../components/ui/StatCard';
@@ -200,7 +200,9 @@ export function DashboardPage() {
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-foreground">{lib.name}</span>
+                        <Link to={`/super-admin/libraries/${lib._id}`} className="font-semibold text-sm text-foreground hover:text-amber-500 hover:underline">
+                          {lib.name}
+                        </Link>
                         <span className="text-xs text-muted-foreground">({lib.email})</span>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">

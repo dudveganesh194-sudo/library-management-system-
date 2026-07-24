@@ -6,8 +6,9 @@
  */
 
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, PauseCircle, PlayCircle, Trash2, Library as LibraryIcon, CheckCircle2, XCircle, Clock, KeyRound, Sparkles, Phone, MessageSquare, LogOut } from 'lucide-react';
+import { Plus, Edit2, PauseCircle, PlayCircle, Trash2, Library as LibraryIcon, CheckCircle2, XCircle, Clock, KeyRound, Sparkles, Phone, MessageSquare, LogOut, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
@@ -132,7 +133,12 @@ export function LibrariesPage() {
       label: 'Library Name',
       render: (lib) => (
         <div>
-          <p className="font-semibold text-foreground">{lib.name}</p>
+          <Link
+            to={`/super-admin/libraries/${lib._id}`}
+            className="font-semibold text-foreground hover:text-amber-500 hover:underline transition-colors"
+          >
+            {lib.name}
+          </Link>
           <p className="text-xs text-muted-foreground">{lib.city}, {lib.state}</p>
         </div>
       ),
@@ -257,6 +263,14 @@ export function LibrariesPage() {
 
         return (
           <div className="flex items-center gap-1">
+            {/* View Profile */}
+            <Link
+              to={`/super-admin/libraries/${lib._id}`}
+              className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors"
+              title="View Library Profile"
+            >
+              <Eye className="w-4 h-4" />
+            </Link>
             {/* Quick Call */}
             {phone && (
               <a
