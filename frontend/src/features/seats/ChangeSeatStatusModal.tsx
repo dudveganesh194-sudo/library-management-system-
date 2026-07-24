@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Wrench, CheckCircle2, Bookmark, UserCheck, UserX, Trash2 } from 'lucide-react';
+import { Wrench, CheckCircle2, Bookmark, UserCheck, UserX, Trash2, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/axios';
 import { Seat } from '../../types';
@@ -53,6 +54,8 @@ export function ChangeSeatStatusModal({
     }
     mutation.mutate(nextStatus);
   };
+
+  const studentObj = seat.currentStudent && typeof seat.currentStudent === 'object' ? seat.currentStudent : null;
 
   return (
     <Modal open={true} onClose={onClose} title={`Seat Situation — ${seat.seatNumber}`}>
@@ -129,10 +132,44 @@ export function ChangeSeatStatusModal({
         </div>
 
         {/* Student Assignment Actions */}
-        <div className="pt-3 border-t border-border space-y-2">
+        <div className="pt-3 border-t border-border space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Student Assignment
           </p>
+
+          {/* Currently Assigned Student info card */}
+          {studentObj && (
+            <div className="p-3 bg-brand-500/10 border border-brand-500/30 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-sm">
+                  {studentObj.name ? studentObj.name.charAt(0).toUpperCase() : 'S'}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground">{studentObj.name}</p>
+                    {studentObj.studentId && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30">
+                        {studentObj.studentId}
+                      </span>
+                    )}
+                  </div>
+                  {studentObj.phone && (
+                    <p className="text-xs text-muted-foreground">{studentObj.phone}</p>
+                  )}
+                </div>
+              </div>
+              {studentObj._id && (
+                <Link
+                  to={`/students/${studentObj._id}`}
+                  className="text-xs font-medium text-brand-400 hover:text-brand-300 hover:underline flex items-center gap-1 shrink-0"
+                  onClick={onClose}
+                >
+                  View Profile &rarr;
+                </Link>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2">
             {seat.status === 'occupied' && onReleaseClick && (
               <Button
