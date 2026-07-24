@@ -9,7 +9,12 @@
     "dev:frontend": "cd frontend && npm run dev",
     "dev": "start /B npm run dev:backend && npm run dev:frontend",
     "install:all": "cd backend && npm install && cd ../frontend && npm install",
-    "seed": "cd backend && npm run seed"
+    "seed": "cd backend && npm run seed",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
-  "description": "Study Library ERP — Monorepo"
+  "description": "Study Library ERP — Monorepo",
+  "devDependencies": {
+    "wrangler": "^4.114.0"
+  }
 }
