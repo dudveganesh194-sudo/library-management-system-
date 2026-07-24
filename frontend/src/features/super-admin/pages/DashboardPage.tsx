@@ -18,6 +18,7 @@ import {
   Sparkles,
   Phone,
   MessageSquare,
+  LogOut,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboard } from '../api/super-admin.api';
@@ -92,7 +93,7 @@ export function DashboardPage() {
           value={stats.libraries.total}
           icon={Library}
           iconColor="text-amber-500"
-          subtitle={`${stats.libraries.active} Active · ${stats.libraries.trial || 0} Free Trial`}
+          subtitle={`${stats.libraries.active} Active · ${stats.libraries.left || 0} Left / Closed`}
         />
         <StatCard
           title="Subscription Payment"
@@ -118,7 +119,7 @@ export function DashboardPage() {
       </div>
 
       {/* Row 2: Secondary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl bg-card border border-border flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase">Active Students</p>
@@ -149,6 +150,20 @@ export function DashboardPage() {
           </div>
           <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500">
             <CreditCard className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div
+          onClick={() => navigate('/super-admin/libraries')}
+          className="p-4 rounded-xl bg-card border border-border flex items-center justify-between cursor-pointer hover:border-slate-500/50 transition-all"
+        >
+          <div>
+            <p className="text-xs text-muted-foreground font-medium uppercase">Libraries Left</p>
+            <p className="text-2xl font-bold text-foreground mt-1">{stats.libraries.left || 0}</p>
+            <p className="text-xs text-slate-500 font-medium">Discontinued libraries</p>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-500/10 text-slate-500">
+            <LogOut className="w-6 h-6" />
           </div>
         </div>
       </div>

@@ -133,9 +133,33 @@
   - Enlarged seat numbers to `text-sm sm:text-base font-extrabold`.
   - Increased minimum card height (`min-h-[68px] sm:min-h-[74px]`) and padding for maximum legibility on all screen sizes.
 
+### 18. 🚪 Student Leave Library & Super Admin Discontinued Library Options
+
+#### 1. 🎓 Student Leave Library (Library ERP)
+- **Automatic Seat Release**: Marking a student as "Left Library" automatically sets their status to `left`, records exit date and exit reason, and immediately frees up their assigned seat (`status: 'available'`).
+- **Interactive Exit Modal ([`MarkStudentLeftModal.tsx`](file:///d:/Desktop/library%20management%20system/frontend/src/features/students/MarkStudentLeftModal.tsx))**:
+  - Predefined exit reasons dropdown (*"Completed Exam Preparation"*, *"Relocated / Moved Away"*, *"Joined Another Library"*, *"Fee / Financial Reason"*, *"Personal Reason"*, *"Other"*).
+  - Exit Date picker and custom notes input.
+- **Left Students Summary & Filter ([`StudentsPage.tsx`](file:///d:/Desktop/library%20management%20system/frontend/src/features/students/StudentsPage.tsx))**:
+  - Dedicated **"Left Students"** stat summary card at the top of the Students page.
+  - Filter dropdown & quick stat card click to view all students who left the library.
+  - Row action menu item: **"Mark as Left Library"** (with `UserMinus` icon) and **"Re-admit / Rejoin"** (with `UserCheck` icon).
+- **Profile Exit Details Banner ([`StudentDetailPage.tsx`](file:///d:/Desktop/library%20management%20system/frontend/src/features/students/StudentDetailPage.tsx))**:
+  - Prominent amber banner on student profile displaying Exit Date, Reason for leaving, Exit notes, and a 1-click **"Re-admit / Rejoin Student"** button.
+
+#### 2. 🏢 Super Admin Library Left / Discontinued Option
+- **Library Exit Status (`Left / Closed`) ([`library.model.ts`](file:///d:/Desktop/library%20management%20system/backend/src/features/super-admin/models/library.model.ts))**:
+  - Added `left` status option to `LIBRARY_STATUS` enum, along with `leaveDate` and `leaveReason` fields.
+  - Automatically deactivates all owner and staff user accounts for the library upon exit to prevent login while preserving all historical data.
+- **Super Admin Exit Modal ([`MarkLibraryLeftModal.tsx`](file:///d:/Desktop/library%20management%20system/frontend/src/features/super-admin/components/MarkLibraryLeftModal.tsx))**:
+  - Super Admin can mark a library as Left / Closed with exit date and predefined reasons (*"Business Closed"*, *"Switched Software"*, *"Fee Issue"*, *"Inactive"*, *"Other"*).
+- **Super Admin Libraries Page & Dashboard Integration**:
+  - **Libraries Page ([`LibrariesPage.tsx`](file:///d:/Desktop/library%20management%20system/frontend/src/features/super-admin/pages/LibrariesPage.tsx))**: Added **"🚪 Left / Closed"** filter tab, status badge, and action button on library rows.
+  - **Super Admin Dashboard ([`DashboardPage.tsx`](file:///d:/Desktop/library%20management%20system/frontend/src/features/super-admin/pages/DashboardPage.tsx))**: Real-time **"Libraries Left"** stat card displaying current count of discontinued libraries with quick click navigation.
+
 ---
 
 ### 🧹 Clean Production Slate:
-- Database was reset to a clean state.
-- Super Admin login credentials: `superadmin@studylib.com` / `SuperAdmin@123456`.
+- Database reset to a clean state.
+- Default Super Admin: `superadmin@studylib.com` / `SuperAdmin@123456`.
 - App URL: `http://localhost:5173`.

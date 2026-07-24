@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Eye, Pencil, Trash2, UserCheck, Clock, AlertTriangle, Filter, PhoneCall, MessageCircle, CreditCard, FileSpreadsheet } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, UserCheck, Clock, AlertTriangle, Filter, PhoneCall, MessageCircle, CreditCard, FileSpreadsheet, UserMinus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/axios';
 import { Student } from '../../types';
@@ -11,6 +11,7 @@ import { StudentStatusBadge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { StudentForm } from './StudentForm';
 import { StudentImportModal } from './StudentImportModal';
+import { MarkStudentLeftModal } from './MarkStudentLeftModal';
 import { PaymentForm } from '../payments/PaymentForm';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/auth.context';
@@ -28,17 +29,20 @@ export function StudentsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [filterExpiry, setFilterExpiry] = useState<'all' | '7days' | 'expired'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | '7days' | 'expired' | 'left'>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [editStudent, setEditStudent] = useState<Student | null>(null);
   const [paymentStudent, setPaymentStudent] = useState<Student | null>(null);
+  const [leftStudent, setLeftStudent] = useState<Student | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['students', user?.libraryId || user?._id, search, page],
+    queryKey: ['students', user?.libraryId || user?._id, search, page, statusFilter],
     queryFn: async () => {
-      const { data } = await api.get('/students', { params: { search, page, limit: 20 } });
+      const params: Record<string, any> = { search, page, limit: 20 };
+      if (statusFilter === 'left') params.status = 'left';
+      const { data } = await api.get('/students', { params });
       return data;
     },
   });
@@ -77,6 +81,7 @@ export function StudentsPage() {
 
   const expiring7Count = expiring7List.length;
   const expiredCount = expiredList.length;
+  const leftCount = rawStudents.filter((s) => s.status === 'left').length;
 
   const expiringStudentMap = new Map<string, { days: number; endDate: string }>();
   expiringList.forEach((item: any) => {
@@ -90,13 +95,16 @@ export function StudentsPage() {
   });
 
   const students = rawStudents.filter((student) => {
-    if (filterExpiry === '7days') {
+    if (statusFilter === '7days') {
       const info = expiringStudentMap.get(student._id);
       return info && info.days >= 0 && info.days <= 7;
     }
-    if (filterExpiry === 'expired') {
+    if (statusFilter === 'expired') {
       const info = expiringStudentMap.get(student._id);
       return (info && info.days < 0) || student.status === 'inactive';
+    }
+    if (statusFilter === 'left') {
+      return student.status === 'left';
     }
     return true;
   });
@@ -126,12 +134,12 @@ export function StudentsPage() {
       </div>
 
       {/* Plan Expiry Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
-          onClick={() => { setFilterExpiry(filterExpiry === '7days' ? 'all' : '7days'); setPage(1); }}
+          onClick={() => { setStatusFilter(statusFilter === '7days' ? 'all' : '7days'); setPage(1); }}
           className={cn(
             'card p-4 flex items-center justify-between cursor-pointer transition-all border-l-4 border-l-amber-500 hover:shadow-md',
-            filterExpiry === '7days' && 'ring-2 ring-amber-500 bg-amber-500/5'
+            statusFilter === '7days' && 'ring-2 ring-amber-500 bg-amber-500/5'
           )}
         >
           <div className="flex items-center gap-3">
@@ -145,17 +153,17 @@ export function StudentsPage() {
           </div>
           <span className={cn(
             'text-xs font-semibold px-2.5 py-1 rounded-full transition-colors',
-            filterExpiry === '7days' ? 'bg-amber-500 text-white' : 'bg-amber-500/10 text-amber-500'
+            statusFilter === '7days' ? 'bg-amber-500 text-white' : 'bg-amber-500/10 text-amber-500'
           )}>
-            {filterExpiry === '7days' ? 'Filtering' : 'Show'}
+            {statusFilter === '7days' ? 'Filtering' : 'Show'}
           </span>
         </div>
 
         <div
-          onClick={() => { setFilterExpiry(filterExpiry === 'expired' ? 'all' : 'expired'); setPage(1); }}
+          onClick={() => { setStatusFilter(statusFilter === 'expired' ? 'all' : 'expired'); setPage(1); }}
           className={cn(
             'card p-4 flex items-center justify-between cursor-pointer transition-all border-l-4 border-l-red-500 hover:shadow-md',
-            filterExpiry === 'expired' && 'ring-2 ring-red-500 bg-red-500/5'
+            statusFilter === 'expired' && 'ring-2 ring-red-500 bg-red-500/5'
           )}
         >
           <div className="flex items-center gap-3">
@@ -169,17 +177,41 @@ export function StudentsPage() {
           </div>
           <span className={cn(
             'text-xs font-semibold px-2.5 py-1 rounded-full transition-colors',
-            filterExpiry === 'expired' ? 'bg-red-500 text-white' : 'bg-red-500/10 text-red-500'
+            statusFilter === 'expired' ? 'bg-red-500 text-white' : 'bg-red-500/10 text-red-500'
           )}>
-            {filterExpiry === 'expired' ? 'Filtering' : 'Show'}
+            {statusFilter === 'expired' ? 'Filtering' : 'Show'}
           </span>
         </div>
 
         <div
-          onClick={() => { setFilterExpiry('all'); setPage(1); }}
+          onClick={() => { setStatusFilter(statusFilter === 'left' ? 'all' : 'left'); setPage(1); }}
+          className={cn(
+            'card p-4 flex items-center justify-between cursor-pointer transition-all border-l-4 border-l-slate-500 hover:shadow-md',
+            statusFilter === 'left' && 'ring-2 ring-slate-500 bg-slate-500/5'
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-slate-500/10 text-slate-500">
+              <UserMinus className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-2xs font-bold text-muted-foreground uppercase tracking-wider">Left Students</p>
+              <p className="text-2xl font-bold text-slate-600 dark:text-slate-400 mt-0.5 tabular-nums">{leftCount}</p>
+            </div>
+          </div>
+          <span className={cn(
+            'text-xs font-semibold px-2.5 py-1 rounded-full transition-colors',
+            statusFilter === 'left' ? 'bg-slate-500 text-white' : 'bg-slate-500/10 text-slate-500'
+          )}>
+            {statusFilter === 'left' ? 'Filtering' : 'Show'}
+          </span>
+        </div>
+
+        <div
+          onClick={() => { setStatusFilter('all'); setPage(1); }}
           className={cn(
             'card p-4 flex items-center justify-between cursor-pointer transition-all border-l-4 border-l-brand-500 hover:shadow-md',
-            filterExpiry === 'all' && 'ring-2 ring-brand-500 bg-brand-500/5'
+            statusFilter === 'all' && 'ring-2 ring-brand-500 bg-brand-500/5'
           )}
         >
           <div className="flex items-center gap-3">
@@ -193,9 +225,9 @@ export function StudentsPage() {
           </div>
           <span className={cn(
             'text-xs font-semibold px-2.5 py-1 rounded-full transition-colors',
-            filterExpiry === 'all' ? 'bg-brand-500 text-white' : 'bg-brand-500/10 text-brand-500'
+            statusFilter === 'all' ? 'bg-brand-500 text-white' : 'bg-brand-500/10 text-brand-500'
           )}>
-            {filterExpiry === 'all' ? 'Active' : 'All'}
+            {statusFilter === 'all' ? 'Active' : 'All'}
           </span>
         </div>
       </div>
@@ -207,12 +239,13 @@ export function StudentsPage() {
           <Filter className="w-4 h-4 text-muted-foreground" />
           <select
             className="input py-1.5 text-sm w-auto"
-            value={filterExpiry}
-            onChange={(e) => { setFilterExpiry(e.target.value as any); setPage(1); }}
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value as any); setPage(1); }}
           >
-            <option value="all">All Plans</option>
+            <option value="all">All Students</option>
             <option value="7days">Expiring in 7 Days ({expiring7Count})</option>
             <option value="expired">Expired Plans ({expiredCount})</option>
+            <option value="left">Left Library ({leftCount})</option>
           </select>
         </div>
       </div>
@@ -247,7 +280,7 @@ export function StudentsPage() {
               <tr>
                 <td colSpan={10} className="text-center py-12 text-muted-foreground">
                   <UserCheck className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p>No students found {filterExpiry !== 'all' ? 'matching the expiry filter' : ''}</p>
+                  <p>No students found {statusFilter !== 'all' ? 'matching the selected filter' : ''}</p>
                   {search && <p className="text-xs mt-1">Try a different search term</p>}
                 </td>
               </tr>
@@ -360,6 +393,31 @@ export function StudentsPage() {
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
+                        {student.status === 'left' ? (
+                          <button
+                            className="btn-ghost btn btn-sm p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                            title="Re-admit / Rejoin Student"
+                            onClick={async () => {
+                              try {
+                                await api.post(`/students/${student._id}/rejoin`);
+                                toast.success(`${student.name} re-admitted successfully`);
+                                queryClient.invalidateQueries({ queryKey: ['students'] });
+                              } catch {
+                                toast.error('Failed to re-admit student');
+                              }
+                            }}
+                          >
+                            <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          </button>
+                        ) : (
+                          <button
+                            className="btn-ghost btn btn-sm p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                            title="Mark as Left Library"
+                            onClick={() => setLeftStudent(student)}
+                          >
+                            <UserMinus className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         {canDelete && (
                           <button
                             className="btn-ghost btn btn-sm p-2 text-danger hover:text-danger"
@@ -387,6 +445,22 @@ export function StudentsPage() {
             <Button variant="secondary" size="sm" disabled={page === meta.totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
           </div>
         </div>
+      )}
+
+      {/* Mark Student Left Modal */}
+      {leftStudent && (
+        <Modal open onClose={() => setLeftStudent(null)} title={`Mark Left Library — ${leftStudent.name}`} size="md">
+          <MarkStudentLeftModal
+            student={leftStudent}
+            onSuccess={() => {
+              setLeftStudent(null);
+              queryClient.invalidateQueries({ queryKey: ['students'] });
+              queryClient.invalidateQueries({ queryKey: ['seats'] });
+              queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            }}
+            onCancel={() => setLeftStudent(null)}
+          />
+        </Modal>
       )}
 
       {/* Add/Edit Modal */}

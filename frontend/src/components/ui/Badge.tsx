@@ -23,12 +23,21 @@ export function Badge({ children, variant = 'default', className }: BadgeProps) 
 
 // Helpers for common status mappings
 export function StudentStatusBadge({ status }: { status: string }) {
+  const labelMap: Record<string, string> = {
+    active: 'Active',
+    inactive: 'Inactive',
+    suspended: 'Suspended',
+    left: 'Left Library',
+    on_leave: 'On Leave',
+  };
   const variantMap: Record<string, BadgeVariant> = {
     active: 'green',
     inactive: 'yellow',
     suspended: 'red',
+    left: 'default',
+    on_leave: 'purple',
   };
-  return <Badge variant={variantMap[status] || 'default'}>{status}</Badge>;
+  return <Badge variant={variantMap[status] || 'default'}>{labelMap[status] || status}</Badge>;
 }
 
 export function SeatStatusBadge({ status }: { status: string }) {

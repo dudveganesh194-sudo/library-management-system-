@@ -29,7 +29,7 @@ import { validateZod } from '../../middleware/validateZod.middleware';
 import { ROLES } from '../../shared/constants';
 
 // Validation schemas
-import { createLibrarySchema, updateLibrarySchema, libraryQuerySchema, grantTrialSchema } from './library.validation';
+import { createLibrarySchema, updateLibrarySchema, libraryQuerySchema, grantTrialSchema, markLibraryLeftSchema } from './library.validation';
 import { createSubscriptionSchema, updateSubscriptionSchema } from './subscription.validation';
 
 // Controller handlers
@@ -43,6 +43,7 @@ import {
   suspendLibrary,
   activateLibrary,
   deleteLibrary,
+  markLibraryLeft,
   getSubscriptions,
   createSubscription,
   updateSubscription,
@@ -75,6 +76,7 @@ router.post('/libraries/:id/grant-trial', validateZod(grantTrialSchema), grantTr
 router.put('/libraries/:id/reset-owner-password', resetLibraryOwnerPassword as any);
 router.patch('/libraries/:id/suspend', suspendLibrary as any);
 router.patch('/libraries/:id/activate', activateLibrary as any);
+router.patch('/libraries/:id/leave', validateZod(markLibraryLeftSchema), markLibraryLeft as any);
 router.delete('/libraries/:id', deleteLibrary as any);
 
 // ── Users (Password Management) ──────────────────────────────────────────────

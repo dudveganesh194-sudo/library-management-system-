@@ -16,8 +16,10 @@ import {
   studentPayments,
   importStudents,
   downloadTemplate,
+  markLeft,
+  rejoin,
 } from './student.controller';
-import { createStudentSchema, updateStudentSchema } from './student.validation';
+import { createStudentSchema, updateStudentSchema, markStudentLeftSchema } from './student.validation';
 
 const router = Router();
 
@@ -33,6 +35,8 @@ router.get('/:id', getStudent as any);
 router.put('/:id', uploadStudentFiles, validate(updateStudentSchema, 'body'), editStudent as any);
 router.delete('/:id', authorize(ROLES.OWNER, ROLES.MANAGER) as any, removeStudent as any);
 router.get('/:id/payments', studentPayments as any);
+router.post('/:id/leave', validate(markStudentLeftSchema, 'body'), markLeft as any);
+router.post('/:id/rejoin', rejoin as any);
 
 export default router;
 

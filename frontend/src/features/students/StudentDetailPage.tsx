@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Phone, Mail, MapPin, Calendar, Plus, Pencil, PhoneCall, MessageCircle, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, MapPin, Calendar, Plus, Pencil, PhoneCall, MessageCircle, Trash2, AlertTriangle, UserMinus, UserCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/axios';
 import { Student, Payment } from '../../types';
@@ -120,6 +120,55 @@ export function StudentDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Left Library Banner */}
+      {student.status === 'left' && (
+        <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+              <UserMinus className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                Student Left Library
+                {student.leaveDate && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (Exit Date: {formatDate(student.leaveDate)})
+                  </span>
+                )}
+              </h3>
+              {student.leaveReason && (
+                <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
+                  Reason for Leaving: {student.leaveReason}
+                </p>
+              )}
+              {student.notes && (
+                <p className="text-xs text-muted-foreground mt-1 whitespace-pre-line">
+                  {student.notes}
+                </p>
+              )}
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<UserCheck className="w-4 h-4" />}
+            onClick={async () => {
+              try {
+                await api.post(`/students/${student._id}/rejoin`);
+                toast.success(`${student.name} re-admitted successfully`);
+                queryClient.invalidateQueries({ queryKey: ['student', id] });
+                queryClient.invalidateQueries({ queryKey: ['students'] });
+              } catch {
+                toast.error('Failed to re-admit student');
+              }
+            }}
+            className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            Re-admit / Rejoin Student
+          </Button>
+        </div>
+      )}
 
       {/* Info grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

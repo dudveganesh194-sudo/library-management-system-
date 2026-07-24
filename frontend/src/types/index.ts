@@ -35,6 +35,8 @@ export interface Student {
   timeSlot?: string;
   seatId?: Seat | string;
   status: StudentStatus;
+  leaveDate?: string;
+  leaveReason?: string;
   notes?: string;
   createdBy?: User | string;
   createdAt: string;
@@ -119,13 +121,13 @@ export interface ApiResponse<T> {
   meta?: { total: number; page: number; limit: number; totalPages: number };
 }
 
-export type StudentStatus = 'active' | 'inactive' | 'suspended';
+export type StudentStatus = 'active' | 'inactive' | 'suspended' | 'left' | 'on_leave';
 export type SeatStatus = 'available' | 'occupied' | 'reserved' | 'maintenance';
 export type PlanType = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | '30' | '60' | '90' | '180' | '365' | 'custom';
 export type PaymentMethod = 'cash' | 'upi' | 'card';
 export type PaymentType = 'new' | 'renewal' | 'penalty';
 export type PaymentStatus = 'paid' | 'pending' | 'overdue';
-export type LibraryStatus = 'active' | 'suspended' | 'deleted';
+export type LibraryStatus = 'active' | 'suspended' | 'left' | 'deleted';
 export type LibraryPaymentStatus = 'paid' | 'unpaid' | 'pending' | 'trial';
 
 // ── Super Admin Types ────────────────────────────────────────────────────────
@@ -161,6 +163,8 @@ export interface Library {
   subscriptionEndDate?: string;
   seatsLimit: number;
   status: LibraryStatus;
+  leaveDate?: string;
+  leaveReason?: string;
   createdBy: { _id: string; name: string; email: string } | string;
   createdAt: string;
   updatedAt: string;
@@ -196,6 +200,7 @@ export interface SuperAdminDashboardStats {
     total: number;
     active: number;
     suspended: number;
+    left: number;
     deleted: number;
     paid: number;
     unpaid: number;

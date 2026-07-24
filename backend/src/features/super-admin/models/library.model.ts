@@ -27,6 +27,8 @@ export interface ILibrary extends Document {
   subscriptionEndDate?: Date;
   seatsLimit: number;
   status: LibraryStatus;
+  leaveDate?: Date;
+  leaveReason?: string;
   createdBy: Types.ObjectId;      // super_admin who created it
   createdAt: Date;
   updatedAt: Date;
@@ -114,6 +116,8 @@ const librarySchema = new Schema<ILibrary>(
       enum: Object.values(LIBRARY_STATUS),
       default: LIBRARY_STATUS.ACTIVE,
     },
+    leaveDate: { type: Date },
+    leaveReason: { type: String, trim: true },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',

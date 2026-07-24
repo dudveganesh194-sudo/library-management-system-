@@ -15,6 +15,7 @@ export type Role = (typeof ROLES)[keyof typeof ROLES];
 export const LIBRARY_STATUS = {
   ACTIVE: 'active',
   SUSPENDED: 'suspended',
+  LEFT: 'left',
   DELETED: 'deleted',
 } as const;
 
@@ -56,6 +57,8 @@ export const STUDENT_STATUS = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
   SUSPENDED: 'suspended',
+  LEFT: 'left',
+  ON_LEAVE: 'on_leave',
 } as const;
 
 export type StudentStatus = (typeof STUDENT_STATUS)[keyof typeof STUDENT_STATUS];

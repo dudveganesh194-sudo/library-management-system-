@@ -16,6 +16,8 @@ import {
   updateStudent,
   deleteStudent,
   getStudentPayments,
+  markStudentLeft,
+  rejoinStudent,
 } from './student.service';
 import { importStudentsFromFile, generateStudentTemplate } from './student-import.service';
 import { AppError } from '../../middleware/error.middleware';
@@ -76,4 +78,16 @@ export async function downloadTemplate(_req: AuthRequest, res: Response): Promis
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename=student_import_template.xlsx');
   res.send(buffer);
+}
+
+export async function markLeft(req: AuthRequest, res: Response): Promise<void> {
+  const libId = req.user.role === 'super_admin' ? undefined : req.libraryId;
+  const student = await markStudentLeft(req.params.id, req.body, libId);
+  successResponse(res, student, 'Student marked as left library successfully');
+}
+
+export async function rejoin(req: AuthRequest, res: Response): Promise<void> {
+  const libId = req.user.role === 'super_admin' ? undefined : req.libraryId;
+  const student = await rejoinStudent(req.params.id, libId);
+  successResponse(res, student, 'Student re-admitted successfully');
 }

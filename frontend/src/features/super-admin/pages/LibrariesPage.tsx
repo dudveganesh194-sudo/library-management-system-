@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, PauseCircle, PlayCircle, Trash2, Library as LibraryIcon, CheckCircle2, XCircle, Clock, KeyRound, Sparkles, Phone, MessageSquare } from 'lucide-react';
+import { Plus, Edit2, PauseCircle, PlayCircle, Trash2, Library as LibraryIcon, CheckCircle2, XCircle, Clock, KeyRound, Sparkles, Phone, MessageSquare, LogOut } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
@@ -23,12 +23,14 @@ import { EditLibraryModal } from '../components/EditLibraryModal';
 import { GrantTrialModal } from '../components/GrantTrialModal';
 import { ResetOwnerPasswordModal } from '../components/ResetOwnerPasswordModal';
 import { LibraryCredentialsDialog } from '../components/LibraryCredentialsDialog';
+import { MarkLibraryLeftModal } from '../components/MarkLibraryLeftModal';
+import { Modal } from '../../../components/ui/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Button } from '../../../components/ui/Button';
 import { formatDate, daysRemaining } from '../../../lib/utils';
 import type { Library, CreateLibraryCredentials } from '../../../types';
 
-type FilterTab = 'all' | 'active' | 'trial' | 'paid' | 'unpaid' | 'expiring_soon' | 'expired' | 'suspended';
+type FilterTab = 'all' | 'active' | 'trial' | 'paid' | 'unpaid' | 'expiring_soon' | 'expired' | 'suspended' | 'left';
 
 export function LibrariesPage() {
   const queryClient = useQueryClient();
@@ -43,6 +45,7 @@ export function LibrariesPage() {
   const [editLibrary, setEditLibrary] = useState<Library | null>(null);
   const [grantTrialLibrary, setGrantTrialLibrary] = useState<Library | null>(null);
   const [resetPasswordLibrary, setResetPasswordLibrary] = useState<Library | null>(null);
+  const [markLeftLibrary, setMarkLeftLibrary] = useState<Library | null>(null);
   const [credentials, setCredentials] = useState<CreateLibraryCredentials | null>(null);
 
   // Confirm dialog state
@@ -324,6 +327,17 @@ export function LibrariesPage() {
               </button>
             ) : null}
 
+            {/* Mark as Left / Closed */}
+            {lib.status !== 'left' && lib.status !== 'deleted' && (
+              <button
+                onClick={() => setMarkLeftLibrary(lib)}
+                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-500/10 transition-colors"
+                title="Mark Library as Left / Closed"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
+
             {/* Delete */}
             {lib.status !== 'deleted' && (
               <button
@@ -353,7 +367,7 @@ export function LibrariesPage() {
             Track onboarded libraries, free trial periods, paid/unpaid subscription statuses, and upcoming plan expiries.
           </p>
         </div>
-        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setCreateModalOpen(true)}>
+        <Button leftIcon={<Plus className="w-4 h-4 text-white" />} onClick={() => setCreateModalOpen(true)}>
           Create Library
         </Button>
       </div>
@@ -369,6 +383,7 @@ export function LibrariesPage() {
           { id: 'expiring_soon', label: 'Expiring Soon (<= 7d)' },
           { id: 'expired', label: 'Expired' },
           { id: 'suspended', label: 'Suspended' },
+          { id: 'left', label: '🚪 Left / Closed' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -435,6 +450,19 @@ export function LibrariesPage() {
         onClose={() => setCredentials(null)}
         credentials={credentials}
       />
+
+      {markLeftLibrary && (
+        <Modal title="Mark Library Left / Closed" open onClose={() => setMarkLeftLibrary(null)}>
+          <MarkLibraryLeftModal
+            library={markLeftLibrary}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['super-admin'] });
+              setMarkLeftLibrary(null);
+            }}
+            onCancel={() => setMarkLeftLibrary(null)}
+          />
+        </Modal>
+      )}
 
       <ConfirmDialog
         open={confirmDialog.open}

@@ -125,7 +125,7 @@ export const libraryQuerySchema = z.object({
   limit: z.string().optional().default('20'),
   search: z.string().optional(),
   status: z
-    .enum(['active', 'suspended', 'deleted', 'paid', 'unpaid', 'trial', 'expiring_soon', 'expired', 'all'])
+    .enum(['active', 'suspended', 'left', 'deleted', 'paid', 'unpaid', 'trial', 'expiring_soon', 'expired', 'all'])
     .optional()
     .default('all'),
   sort: z.string().optional().default('createdAt'),
@@ -133,3 +133,11 @@ export const libraryQuerySchema = z.object({
 });
 
 export type LibraryQueryInput = z.infer<typeof libraryQuerySchema>;
+
+// ── Mark Library Left Schema ────────────────────────────────────────────────
+export const markLibraryLeftSchema = z.object({
+  leaveDate: z.string().optional(),
+  leaveReason: z.string().optional(),
+});
+
+export type MarkLibraryLeftInput = z.infer<typeof markLibraryLeftSchema>;

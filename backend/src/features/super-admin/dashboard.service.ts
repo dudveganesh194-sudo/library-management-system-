@@ -15,6 +15,7 @@ export interface DashboardStats {
     total: number;
     active: number;
     suspended: number;
+    left: number;
     deleted: number;
     paid: number;
     unpaid: number;
@@ -73,6 +74,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     totalLibraries,
     activeLibraries,
     suspendedLibraries,
+    leftLibraries,
     deletedLibraries,
     paidLibraries,
     unpaidLibraries,
@@ -94,6 +96,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     Library.countDocuments(),
     Library.countDocuments({ status: LIBRARY_STATUS.ACTIVE }),
     Library.countDocuments({ status: LIBRARY_STATUS.SUSPENDED }),
+    Library.countDocuments({ status: LIBRARY_STATUS.LEFT }),
     Library.countDocuments({ status: LIBRARY_STATUS.DELETED }),
     Library.countDocuments({ paymentStatus: LIBRARY_PAYMENT_STATUS.PAID, status: { $ne: LIBRARY_STATUS.DELETED } }),
     Library.countDocuments({ paymentStatus: { $in: [LIBRARY_PAYMENT_STATUS.UNPAID, LIBRARY_PAYMENT_STATUS.PENDING] }, status: { $ne: LIBRARY_STATUS.DELETED } }),
@@ -149,6 +152,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       total: totalLibraries,
       active: activeLibraries,
       suspended: suspendedLibraries,
+      left: leftLibraries,
       deleted: deletedLibraries,
       paid: paidLibraries,
       unpaid: unpaidLibraries,

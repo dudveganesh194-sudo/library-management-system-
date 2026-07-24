@@ -51,3 +51,9 @@ export const updateStudentSchema = Joi.object({
   paymentStartDate: Joi.date().allow('', null),
   paymentNotes: Joi.string().trim().allow('', null),
 });
+
+export const markStudentLeftSchema = Joi.object({
+  leaveDate: Joi.date().default(() => new Date()),
+  leaveReason: Joi.string().trim().allow('', null),
+  notes: Joi.string().trim().allow('', null),
+});

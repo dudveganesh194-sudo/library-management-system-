@@ -14,6 +14,10 @@ const statusConfig: Record<LibraryStatus, { label: string; className: string }> 
     label: 'Suspended',
     className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
   },
+  left: {
+    label: 'Left / Closed',
+    className: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+  },
   deleted: {
     label: 'Deleted',
     className: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
@@ -40,6 +44,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         'w-1.5 h-1.5 rounded-full',
         status === 'active' && 'bg-emerald-500',
         status === 'suspended' && 'bg-amber-500',
+        status === 'left' && 'bg-slate-500',
         status === 'deleted' && 'bg-red-500'
       )} />
       {config.label}

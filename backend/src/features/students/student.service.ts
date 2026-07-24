@@ -6,7 +6,7 @@ import { Student, IStudent } from './student.model';
 import { Seat } from '../seats/seat.model';
 import { NotFoundError, ConflictError } from '../../middleware/error.middleware';
 import { PaginatedResult, PaginationQuery } from '../../shared/types';
-import { DEFAULT_LIMIT, DEFAULT_PAGE, SEAT_STATUS } from '../../shared/constants';
+import { DEFAULT_LIMIT, DEFAULT_PAGE, SEAT_STATUS, STUDENT_STATUS } from '../../shared/constants';
 import { memoryCache } from '../../shared/helpers/cache.helper';
 
 async function getNextStudentId(libraryId?: string): Promise<string> {
@@ -274,4 +274,54 @@ export async function getStudentPayments(studentId: string, libraryId?: string):
     .populate('collectedBy', 'name')
     .sort({ createdAt: -1 })
     .lean();
+}
+
+export async function markStudentLeft(
+  id: string,
+  leaveData: { leaveDate?: Date; leaveReason?: string; notes?: string },
+  libraryId?: string
+): Promise<IStudent> {
+  const filter: Record<string, unknown> = { _id: id };
+  if (libraryId) filter.libraryId = libraryId;
+
+  const student = await Student.findOne(filter);
+  if (!student) throw new NotFoundError('Student');
+
+  // Automatically release seat if assigned
+  if (student.seatId) {
+    await Seat.findByIdAndUpdate(student.seatId, {
+      status: SEAT_STATUS.AVAILABLE,
+      currentStudent: null,
+    });
+  }
+
+  student.status = STUDENT_STATUS.LEFT;
+  student.seatId = undefined as any;
+  student.leaveDate = leaveData.leaveDate || new Date();
+  if (leaveData.leaveReason) student.leaveReason = leaveData.leaveReason;
+  if (leaveData.notes) {
+    student.notes = student.notes
+      ? `${student.notes}\n[Left Note]: ${leaveData.notes}`
+      : leaveData.notes;
+  }
+
+  await student.save();
+  memoryCache.invalidatePattern('reports:');
+  return student;
+}
+
+export async function rejoinStudent(id: string, libraryId?: string): Promise<IStudent> {
+  const filter: Record<string, unknown> = { _id: id };
+  if (libraryId) filter.libraryId = libraryId;
+
+  const student = await Student.findOne(filter);
+  if (!student) throw new NotFoundError('Student');
+
+  student.status = STUDENT_STATUS.ACTIVE;
+  student.leaveDate = undefined;
+  student.leaveReason = undefined;
+
+  await student.save();
+  memoryCache.invalidatePattern('reports:');
+  return student;
 }

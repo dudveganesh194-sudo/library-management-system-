@@ -316,6 +316,8 @@ export async function getAllLibraries(
       filter.status = LIBRARY_STATUS.ACTIVE;
     } else if (query.status === 'suspended') {
       filter.status = LIBRARY_STATUS.SUSPENDED;
+    } else if (query.status === 'left') {
+      filter.status = LIBRARY_STATUS.LEFT;
     } else if (query.status === 'deleted') {
       filter.status = LIBRARY_STATUS.DELETED;
     } else if (query.status === 'paid') {
@@ -698,4 +700,66 @@ export async function deleteLibrary(
   }
 
   logger.info(`🗑️  Library deleted (soft): "${library.name}"`);
+}
+
+// ── Mark Library Left / Closed ─────────────────────────────────────────────
+
+export async function markLibraryLeft(
+  id: string,
+  leaveData: { leaveDate?: string | Date; leaveReason?: string },
+  superAdminId: string,
+  ipAddress?: string
+): Promise<ILibrary> {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new NotFoundError('Library');
+  }
+
+  const library = await Library.findById(id);
+  if (!library) throw new NotFoundError('Library');
+
+  const leaveDate = leaveData.leaveDate ? new Date(leaveData.leaveDate) : new Date();
+  const leaveReason = leaveData.leaveReason || 'Library left platform / discontinued';
+
+  const updatedLibrary = await Library.findByIdAndUpdate(
+    id,
+    {
+      status: LIBRARY_STATUS.LEFT,
+      leaveDate,
+      leaveReason,
+    },
+    { new: true, runValidators: false }
+  )
+    .populate('owner', 'name email phone isActive')
+    .populate('subscription', 'name price duration maxSeats');
+
+  if (!updatedLibrary) throw new NotFoundError('Library');
+
+  // Deactivate owner user and library staff to prevent login
+  const userFilters: any[] = [];
+  if (library.owner && mongoose.Types.ObjectId.isValid(String(library.owner))) {
+    userFilters.push({ _id: library.owner });
+  }
+  if (library._id) {
+    userFilters.push({ libraryId: library._id });
+  }
+  if (userFilters.length > 0) {
+    await User.updateMany({ $or: userFilters }, { isActive: false }).catch(() => {});
+  }
+
+  try {
+    await logAction({
+      action: 'library.left',
+      performedBy: superAdminId,
+      targetType: 'library',
+      targetId: id,
+      details: `Marked library "${updatedLibrary.name}" as Left / Closed. Reason: ${leaveReason}`,
+      metadata: { leaveDate, leaveReason },
+      ipAddress,
+    });
+  } catch (err) {
+    logger.error('Failed to log audit action:', err);
+  }
+
+  logger.info(`🚪 Library marked as left: "${updatedLibrary.name}"`);
+  return updatedLibrary;
 }

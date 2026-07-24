@@ -33,6 +33,8 @@ export interface IStudent extends Document {
   timeSlot?: string;
   seatId?: Types.ObjectId;
   status: StudentStatus;
+  leaveDate?: Date;
+  leaveReason?: string;
   notes?: string;
   createdBy: Types.ObjectId;
   createdAt: Date;
@@ -99,6 +101,8 @@ const studentSchema = new Schema<IStudent>(
       enum: Object.values(STUDENT_STATUS),
       default: STUDENT_STATUS.ACTIVE,
     },
+    leaveDate: { type: Date },
+    leaveReason: { type: String, trim: true },
     notes: { type: String, trim: true },
     createdBy: {
       type: Schema.Types.ObjectId,

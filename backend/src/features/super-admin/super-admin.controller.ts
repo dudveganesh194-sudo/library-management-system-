@@ -88,6 +88,12 @@ export async function deleteLibrary(req: AuthRequest, res: Response): Promise<vo
   successResponse(res, null, 'Library deleted');
 }
 
+export async function markLibraryLeft(req: AuthRequest, res: Response): Promise<void> {
+  const ipAddress = req.ip || req.socket.remoteAddress;
+  const library = await libraryService.markLibraryLeft(req.params.id, req.body, req.user.id, ipAddress);
+  successResponse(res, library, 'Library marked as Left / Closed successfully');
+}
+
 // ── Subscriptions ────────────────────────────────────────────────────────────
 
 export async function getSubscriptions(req: AuthRequest, res: Response): Promise<void> {

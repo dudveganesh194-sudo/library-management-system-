@@ -31,7 +31,7 @@ export interface LibraryQueryParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: 'active' | 'suspended' | 'deleted' | 'paid' | 'unpaid' | 'trial' | 'expiring_soon' | 'expired' | 'all';
+  status?: 'active' | 'suspended' | 'left' | 'deleted' | 'paid' | 'unpaid' | 'trial' | 'expiring_soon' | 'expired' | 'all';
   sort?: string;
   order?: 'asc' | 'desc';
 }
@@ -107,6 +107,11 @@ export async function suspendLibrary(id: string): Promise<Library> {
 
 export async function activateLibrary(id: string): Promise<Library> {
   const { data } = await api.patch<ApiResponse<Library>>(`${BASE}/libraries/${id}/activate`);
+  return data.data;
+}
+
+export async function markLibraryLeft(id: string, payload: { leaveDate?: string; leaveReason?: string }): Promise<Library> {
+  const { data } = await api.patch<ApiResponse<Library>>(`${BASE}/libraries/${id}/leave`, payload);
   return data.data;
 }
 
