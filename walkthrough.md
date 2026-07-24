@@ -144,7 +144,9 @@
   - Dedicated **"Left Students"** stat summary card at the top of the Students page.
   - Filter dropdown & quick stat card click to view all students who left the library.
   - Row action menu item: **"Mark as Left Library"** (with `UserMinus` icon) and **"Re-admit / Rejoin"** (with `UserCheck` icon).
-- **Profile Exit Details Banner ([`StudentDetailPage.tsx`](file:///d:/Desktop/library%20management%20system/frontend/src/features/students/StudentDetailPage.tsx))**:
+- **Profile Exit Details Banner & Header Action ([`StudentDetailPage.tsx`](file:///d:/Desktop/library%20management%20system/frontend/src/features/students/StudentDetailPage.tsx))**:
+  - Added explicit **"Mark as Left"** action button right on the top header of the student profile page (next to Edit Profile and Record Payment).
+  - Added **"Left Library"** option to the Student Status dropdown in the Edit Profile modal ([`StudentForm.tsx`](file:///d:/Desktop/library%20management%20system/frontend/src/features/students/StudentForm.tsx)).
   - Prominent amber banner on student profile displaying Exit Date, Reason for leaving, Exit notes, and a 1-click **"Re-admit / Rejoin Student"** button.
 
 #### 2. 🏢 Super Admin Library Left / Discontinued Option

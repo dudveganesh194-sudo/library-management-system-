@@ -11,6 +11,7 @@ import { Modal } from '../../components/ui/Modal';
 import { StudentStatusBadge, PaymentStatusBadge } from '../../components/ui/Badge';
 import { StudentForm } from './StudentForm';
 import { PaymentForm } from '../payments/PaymentForm';
+import { MarkStudentLeftModal } from './MarkStudentLeftModal';
 import { useAuth } from '../../store/auth.context';
 
 export function StudentDetailPage() {
@@ -23,6 +24,7 @@ export function StudentDetailPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [leftModalOpen, setLeftModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const deleteMutation = useMutation({
@@ -106,6 +108,34 @@ export function StudentDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {student.status === 'left' ? (
+              <Button
+                variant="primary"
+                leftIcon={<UserCheck className="w-4 h-4" />}
+                onClick={async () => {
+                  try {
+                    await api.post(`/students/${student._id}/rejoin`);
+                    toast.success(`${student.name} re-admitted successfully`);
+                    queryClient.invalidateQueries({ queryKey: ['student', id] });
+                    queryClient.invalidateQueries({ queryKey: ['students'] });
+                  } catch {
+                    toast.error('Failed to re-admit student');
+                  }
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                Re-admit Student
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                leftIcon={<UserMinus className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+                onClick={() => setLeftModalOpen(true)}
+                className="border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+              >
+                Mark as Left
+              </Button>
+            )}
             {canDelete && (
               <Button variant="danger" leftIcon={<Trash2 className="w-4 h-4" />} onClick={() => setDeleteConfirmOpen(true)}>
                 Delete Profile
@@ -289,6 +319,22 @@ export function StudentDetailPage() {
       </div>
 
       {/* Modals */}
+      {leftModalOpen && (
+        <Modal open onClose={() => setLeftModalOpen(false)} title={`Mark Left Library — ${student.name}`} size="md">
+          <MarkStudentLeftModal
+            student={student}
+            onSuccess={() => {
+              setLeftModalOpen(false);
+              queryClient.invalidateQueries({ queryKey: ['student', id] });
+              queryClient.invalidateQueries({ queryKey: ['students'] });
+              queryClient.invalidateQueries({ queryKey: ['seats'] });
+              queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            }}
+            onCancel={() => setLeftModalOpen(false)}
+          />
+        </Modal>
+      )}
+
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit Student" size="lg">
         <StudentForm
           student={student}

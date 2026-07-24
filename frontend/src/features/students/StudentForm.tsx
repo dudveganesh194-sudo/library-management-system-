@@ -54,6 +54,7 @@ const studentSchema = z.object({
   shiftHours: z.coerce.number().min(1).max(24).optional(),
   startTime: z.string().optional().or(z.literal('')),
   endTime: z.string().optional().or(z.literal('')),
+  status: z.enum(['active', 'inactive', 'suspended', 'left', 'on_leave']).optional(),
   notes: z.string().optional().or(z.literal('')),
 });
 
@@ -102,6 +103,7 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
       shiftHours: student?.shiftHours || 24,
       startTime: student?.startTime || '07:00',
       endTime: student?.endTime || '13:00',
+      status: student?.status || 'active',
       notes: student?.notes || '',
     },
   });
@@ -272,6 +274,21 @@ export function StudentForm({ student, onSuccess, onCancel }: StudentFormProps) 
         )}
 
         <Input label="Address" placeholder="City, State" error={errors.address?.message} {...register('address')} />
+
+        {isEdit && (
+          <Select
+            label="Student Status"
+            error={errors.status?.message}
+            options={[
+              { label: 'Active', value: 'active' },
+              { label: 'Inactive', value: 'inactive' },
+              { label: 'Left Library', value: 'left' },
+              { label: 'Suspended', value: 'suspended' },
+              { label: 'On Leave', value: 'on_leave' },
+            ]}
+            {...register('status')}
+          />
+        )}
       </div>
 
       {/* Preview Time Slot */}
